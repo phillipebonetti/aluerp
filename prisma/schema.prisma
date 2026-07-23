@@ -1,0 +1,80 @@
+// AluERP — Schema Prisma
+// Banco: PostgreSQL via Supabase
+// Multi-tenant: cada empresa é um tenant isolado
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// EMPRESA (Tenant)
+// ─────────────────────────────────────────────
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  cnpj      String?  @unique
+  phone     String?
+  email     String?
+  logo      String?
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members CompanyMember[]
+
+  @@map("companies")
+}
+
+// ─────────────────────────────────────────────
+// USUÁRIO
+// ─────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships CompanyMember[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// MEMBRO DE EMPRESA (relação N:N com papel)
+// ─────────────────────────────────────────────
+model CompanyMember {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@map("company_members")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  VIEWER
+}

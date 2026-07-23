@@ -1,6 +1,7 @@
 import { DashboardCard } from '@/components/dashboard/dashboard-card'
 import { CashFlowChart, EntradasSaidasChart, ExpensesChart } from '@/components/dashboard/charts'
-import { recentOrders, statusColors } from '@/lib/mock-data'
+import { recentOrders } from '@/lib/mock-data'
+import { STATUS_COLORS } from '@/lib/constants'
 import {
   Wallet,
   TrendingUp,
@@ -142,7 +143,7 @@ export default function DashboardPage() {
                         <span
                           className={cn(
                             'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border',
-                            statusColors[order.status]
+                            STATUS_COLORS[order.status]
                           )}
                         >
                           {order.status}

@@ -2,9 +2,10 @@
 
 import { Bell, Search, Sun, Moon, ChevronDown, Menu } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
@@ -14,13 +15,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { logoutAction } from '@/lib/actions/auth'
+import type { SessionUser, SessionCompany } from '@/lib/auth'
 
 interface HeaderProps {
   onMenuClick?: () => void
+  user?: SessionUser | null
+  company?: SessionCompany | null
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join('')
+}
+
+export function Header({ onMenuClick, user, company }: HeaderProps) {
   const { theme, setTheme } = useTheme()
+  const [isPending, startTransition] = useTransition()
+
+  function handleLogout() {
+    startTransition(async () => {
+      await logoutAction()
+    })
+  }
+
+  const displayName = user?.name ?? 'Usuário'
+  const displayEmail = user?.email ?? ''
+  const displayCompany = company?.name ?? 'Minha Empresa'
+  const initials = getInitials(displayName)
 
   return (
     <header className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center px-4 gap-3 shrink-0 sticky top-0 z-30">
@@ -104,11 +130,14 @@ export function Header({ onMenuClick }: HeaderProps) {
             render={
               <button className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/60 transition-colors h-8">
                 <Avatar className="h-6 w-6">
-                  <AvatarFallback className="text-[10px] font-semibold bg-accent text-accent-foreground">AA</AvatarFallback>
+                  {user?.avatar && <AvatarImage src={user.avatar} alt={displayName} />}
+                  <AvatarFallback className="text-[10px] font-semibold bg-accent text-accent-foreground">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex flex-col items-start leading-none">
-                  <span className="text-xs font-medium text-foreground">Admin</span>
-                  <span className="text-[10px] text-muted-foreground">Alumínios ABC Ltda</span>
+                  <span className="text-xs font-medium text-foreground">{displayName}</span>
+                  <span className="text-[10px] text-muted-foreground">{displayCompany}</span>
                 </div>
                 <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
               </button>
@@ -117,8 +146,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium">Admin</span>
-                <span className="text-xs text-muted-foreground font-normal">admin@aluerp.com.br</span>
+                <span className="text-sm font-medium">{displayName}</span>
+                <span className="text-xs text-muted-foreground font-normal">{displayEmail}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -126,8 +155,13 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuItem className="text-sm">Configurações</DropdownMenuItem>
             <DropdownMenuItem className="text-sm">Plano e Faturamento</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" className="text-sm">
-              Sair
+            <DropdownMenuItem
+              variant="destructive"
+              className="text-sm"
+              onClick={handleLogout}
+              disabled={isPending}
+            >
+              {isPending ? 'Saindo...' : 'Sair'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

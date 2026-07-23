@@ -4,13 +4,15 @@ import { useState } from 'react'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { cn } from '@/lib/utils'
+import type { SessionUser, SessionCompany } from '@/lib/auth'
 
 interface AppLayoutProps {
   children: React.ReactNode
+  user?: SessionUser | null
+  company?: SessionCompany | null
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, user, company }: AppLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -36,7 +38,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Header onMenuClick={() => setMobileOpen(true)} />
+        <Header
+          onMenuClick={() => setMobileOpen(true)}
+          user={user}
+          company={company}
+        />
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           {children}
         </main>
