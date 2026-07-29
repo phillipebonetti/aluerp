@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/lib/constants'
+import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/src/core/config/constants'
 import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
