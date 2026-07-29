@@ -1,0 +1,124 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║             SPRINT 4.1.5 — RELACIONAMENTO COMERCIAL                      ║
+║                         STATUS: ✅ COMPLETO                              ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+AJUSTES REALIZADOS
+═══════════════════════════════════════════════════════════════════════════
+
+1. ✅ Quote ↔ Employee
+   Campos:     salespersonId (String?), commissionRateApplied (Decimal?)
+   Relação:    Quote → salesperson (Employee?)
+   Reverso:    Employee → quotes (Quote[])
+   Índices:    salespersonId, (companyId, salespersonId)
+
+2. ✅ Transaction ↔ Employee
+   Campos:     salespersonId (String?)
+   Relação:    Transaction → salesperson (Employee?)
+   Reverso:    Employee → transactions (Transaction[])
+   Índices:    salespersonId, (companyId, salespersonId)
+
+VALIDAÇÃO
+═══════════════════════════════════════════════════════════════════════════
+
+✔ prisma validate ................ Schema válido
+✔ prisma generate ................ Client gerado (313ms)
+✔ TypeScript ..................... Zero novos erros
+✔ Compatibilidade ................ 100% (sem breaking changes)
+
+MUDANÇAS NO SCHEMA
+═══════════════════════════════════════════════════════════════════════════
+
+Campos Novos:
+  • Quote.salespersonId (String?)
+  • Quote.commissionRateApplied (Decimal? 5,2)
+  • Transaction.salespersonId (String?)
+
+Relacionamentos Novos:
+  • Quote.salesperson → Employee
+  • Transaction.salesperson → Employee
+  • Employee.quotes → Quote[]
+  • Employee.transactions → Transaction[]
+
+Índices Novos:
+  • Quote: salespersonId, (companyId, salespersonId)
+  • Transaction: salespersonId, (companyId, salespersonId)
+
+ESTATÍSTICAS
+═══════════════════════════════════════════════════════════════════════════
+
+Schema Size:            807 linhas (+15)
+Models:                 23
+Enums:                  18
+Relacionamentos:        55 (+4)
+Índices:                52 (+4)
+
+MOTIVO DE CADA ADIÇÃO
+═══════════════════════════════════════════════════════════════════════════
+
+salespersonId em Quote:
+  → Identificar qual vendedor criou/fechou o orçamento
+  → Permite relatórios de vendas por vendedor
+  → Base para cálculo de comissão
+
+commissionRateApplied em Quote:
+  → Snapshot da taxa de comissão no momento da venda
+  → Protege contra mudanças futuras na taxa do vendedor
+  → Garante que comissão histórica não muda
+
+salespersonId em Transaction:
+  → Rastrear transações de venda por vendedor
+  → Cálculos de comissão por transação realizada
+  → Histórico financeiro por responsável
+
+BENEFÍCIOS
+═══════════════════════════════════════════════════════════════════════════
+
+✓ Relatório de comissão por vendedor
+✓ Histórico de vendas por vendedor
+✓ Auditoria de comissões aplicadas
+✓ Proteção contra alteração retroativa de taxas
+✓ Performance: índices compostos habilitam queries rápidas
+
+CASOS DE USO HABILITADOS
+═══════════════════════════════════════════════════════════════════════════
+
+1. Calcular comissão total por vendedor em período
+   SELECT e.name, SUM(q.totalValue * q.commissionRateApplied / 100)
+   FROM employees e
+   LEFT JOIN quotes q ON e.id = q.salespersonId AND q.status = 'APPROVED'
+   WHERE q.createdAt BETWEEN ? AND ?
+
+2. Listar orçamentos criados por vendedor
+   SELECT * FROM quotes WHERE salespersonId = ? AND companyId = ?
+
+3. Histórico de transações de um vendedor
+   SELECT * FROM transactions 
+   WHERE salespersonId = ? AND type = 'INCOME'
+
+4. Auditoria: qual taxa foi aplicada em cada venda
+   SELECT id, totalValue, commissionRateApplied, totalValue * commissionRateApplied / 100 as commission
+   FROM quotes WHERE salespersonId = ? AND approvedAt IS NOT NULL
+
+PRÓXIMOS PASSOS
+═══════════════════════════════════════════════════════════════════════════
+
+Sprint 4.2:
+  [ ] Migration: prisma migrate dev --name add_salesperson_links
+  [ ] Atualizar Quote CRUD (adicionar salespersonId)
+  [ ] Atualizar Transaction CRUD (adicionar salespersonId)
+  [ ] Implementar validações Zod
+
+Sprint 4.3:
+  [ ] Server action para calcular comissão
+  [ ] Relatório de comissões por período
+  [ ] Testes de integridade
+
+═════════════════════════════════════════════════════════════════════════════
+
+                  ✅ SPRINT 4.1.5 CONCLUÍDO
+           Relacionamento Comercial Implementado com Sucesso
+
+                    PRONTO PARA SPRINT 4.2 🚀
+
+═════════════════════════════════════════════════════════════════════════════
