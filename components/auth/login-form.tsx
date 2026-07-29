@@ -41,6 +41,14 @@ export function LoginForm() {
           </div>
         )}
 
+        {/* Demo credentials */}
+        <div className="text-xs bg-muted/60 border border-border rounded-lg px-3 py-2.5 space-y-1">
+          <p className="font-medium text-foreground">Conta de demonstração</p>
+          <p className="text-muted-foreground font-mono">
+            demo@aluerp.com / demo123
+          </p>
+        </div>
+
         {/* Form */}
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">

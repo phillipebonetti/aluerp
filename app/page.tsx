@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation'
-import { getSupabaseUser } from '@/lib/auth'
+import { getSession, hasIdentity } from '@/lib/auth'
 
 export default async function RootPage() {
-  // Se não há env vars configuradas, getSupabaseUser retorna null → vai para /login
-  const user = await getSupabaseUser()
+  const session = await getSession()
 
-  if (user) {
-    redirect('/dashboard')
-  } else {
-    redirect('/login')
-  }
+  // Sessão completa (usuário + empresa) → dashboard
+  if (session) redirect('/dashboard')
+
+  // Autenticado mas sem empresa → onboarding
+  if (await hasIdentity()) redirect('/onboarding')
+
+  redirect('/login')
 }

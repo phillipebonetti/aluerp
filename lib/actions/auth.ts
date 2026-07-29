@@ -2,21 +2,54 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
+import { isPreviewMode } from '@/lib/env'
+import {
+  setPreviewSession,
+  getPreviewSessionUserId,
+  clearPreviewSession,
+} from '@/lib/preview-session'
+import {
+  findUserByEmail,
+  createUser,
+  createCompany,
+  findMembershipByUserId,
+} from '@/lib/preview-store'
+
+export interface ActionResult {
+  error?: string
+}
 
 // ─────────────────────────────────────────────
 // Login
 // ─────────────────────────────────────────────
 
-export async function loginAction(formData: FormData) {
-  const email = formData.get('email') as string
+export async function loginAction(formData: FormData): Promise<ActionResult> {
+  const email = (formData.get('email') as string)?.trim()
   const password = formData.get('password') as string
 
   if (!email || !password) {
     return { error: 'Preencha todos os campos.' }
   }
 
+  if (isPreviewMode) {
+    const user = findUserByEmail(email)
+    if (!user || user.password !== password) {
+      return { error: 'E-mail ou senha inválidos.' }
+    }
+
+    await setPreviewSession(user.id)
+
+    // Se ainda não tem empresa, vai para o onboarding
+    const membership = findMembershipByUserId(user.id)
+    redirect(membership ? '/dashboard' : '/onboarding')
+  }
+
   const supabase = await createClient()
+  if (!supabase) {
+    return { error: 'Serviço de autenticação indisponível.' }
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
@@ -30,9 +63,9 @@ export async function loginAction(formData: FormData) {
 // Registro
 // ─────────────────────────────────────────────
 
-export async function registerAction(formData: FormData) {
-  const name = formData.get('name') as string
-  const email = formData.get('email') as string
+export async function registerAction(formData: FormData): Promise<ActionResult> {
+  const name = (formData.get('name') as string)?.trim()
+  const email = (formData.get('email') as string)?.trim()
   const password = formData.get('password') as string
 
   if (!name || !email || !password) {
@@ -43,7 +76,21 @@ export async function registerAction(formData: FormData) {
     return { error: 'A senha deve ter pelo menos 6 caracteres.' }
   }
 
+  if (isPreviewMode) {
+    if (findUserByEmail(email)) {
+      return { error: 'Este e-mail já está cadastrado.' }
+    }
+
+    const user = createUser({ name, email, password })
+    await setPreviewSession(user.id)
+    redirect('/onboarding')
+  }
+
   const supabase = await createClient()
+  if (!supabase) {
+    return { error: 'Serviço de autenticação indisponível.' }
+  }
+
   const { data, error } = await supabase.auth.signUp({ email, password })
 
   if (error) {
@@ -55,6 +102,11 @@ export async function registerAction(formData: FormData) {
   }
 
   // Cria o perfil do usuário no banco via Prisma
+  const prisma = await getPrisma()
+  if (!prisma) {
+    return { error: 'Banco de dados indisponível. Tente novamente.' }
+  }
+
   await prisma.user.upsert({
     where: { id: data.user.id },
     create: { id: data.user.id, name, email },
@@ -68,42 +120,58 @@ export async function registerAction(formData: FormData) {
 // Onboarding — criar empresa
 // ─────────────────────────────────────────────
 
-export async function createCompanyAction(formData: FormData) {
-  const name = formData.get('name') as string
-  const cnpj = (formData.get('cnpj') as string) || undefined
-  const phone = (formData.get('phone') as string) || undefined
-  const email = (formData.get('email') as string) || undefined
+export async function createCompanyAction(
+  formData: FormData
+): Promise<ActionResult> {
+  const name = (formData.get('name') as string)?.trim()
+  const cnpj = ((formData.get('cnpj') as string) || '').trim() || undefined
+  const phone = ((formData.get('phone') as string) || '').trim() || undefined
+  const email = ((formData.get('email') as string) || '').trim() || undefined
 
   if (!name) {
     return { error: 'O nome da empresa é obrigatório.' }
   }
 
+  if (isPreviewMode) {
+    const userId = await getPreviewSessionUserId()
+    if (!userId) {
+      return { error: 'Sessão expirada. Faça login novamente.' }
+    }
+
+    createCompany({ name, cnpj, phone, email, ownerId: userId })
+    redirect('/dashboard')
+  }
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  if (!supabase) {
+    return { error: 'Serviço de autenticação indisponível.' }
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return { error: 'Sessão expirada. Faça login novamente.' }
   }
 
+  const prisma = await getPrisma()
+  if (!prisma) {
+    return { error: 'Banco de dados indisponível. Tente novamente.' }
+  }
+
   // Cria empresa e vincula o usuário como OWNER
-  const company = await prisma.company.create({
+  await prisma.company.create({
     data: {
       name,
       cnpj,
       phone,
       email,
       members: {
-        create: {
-          userId: user.id,
-          role: 'OWNER',
-        },
+        create: { userId: user.id, role: 'OWNER' },
       },
     },
   })
-
-  if (!company) {
-    return { error: 'Erro ao criar empresa. Tente novamente.' }
-  }
 
   redirect('/dashboard')
 }
@@ -113,7 +181,14 @@ export async function createCompanyAction(formData: FormData) {
 // ─────────────────────────────────────────────
 
 export async function logoutAction() {
+  if (isPreviewMode) {
+    await clearPreviewSession()
+    redirect('/login')
+  }
+
   const supabase = await createClient()
-  await supabase.auth.signOut()
+  if (supabase) {
+    await supabase.auth.signOut()
+  }
   redirect('/login')
 }

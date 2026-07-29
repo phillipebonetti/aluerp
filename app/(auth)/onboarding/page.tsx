@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getSupabaseUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { getCurrentUser, getSession } from '@/lib/auth'
 import { OnboardingForm } from '@/components/auth/onboarding-form'
 
 export const metadata: Metadata = {
@@ -9,29 +8,17 @@ export const metadata: Metadata = {
 }
 
 export default async function OnboardingPage() {
-  // Busca o usuário autenticado
-  const supabaseUser = await getSupabaseUser()
+  const user = await getCurrentUser()
 
-  if (!supabaseUser) {
+  if (!user) {
     redirect('/login')
   }
 
-  // Se já tem empresa, vai direto pro dashboard
-  const existingMember = await prisma.companyMember.findFirst({
-    where: { userId: supabaseUser.id },
-  }).catch(() => null)
-
-  if (existingMember) {
+  // Se já tem empresa vinculada, vai direto pro dashboard
+  const session = await getSession()
+  if (session) {
     redirect('/dashboard')
   }
 
-  // Busca o perfil para pegar o nome
-  const profile = await prisma.user.findUnique({
-    where: { id: supabaseUser.id },
-    select: { name: true },
-  }).catch(() => null)
-
-  const userName = profile?.name ?? supabaseUser.email ?? 'Usuário'
-
-  return <OnboardingForm userName={userName} />
+  return <OnboardingForm userName={user.name} />
 }

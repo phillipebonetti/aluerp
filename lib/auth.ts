@@ -1,10 +1,18 @@
 /**
  * Helpers de sessão para o AluERP.
- * Usa Supabase Auth como provedor de identidade.
- * O Prisma sincroniza o perfil do usuário e as associações de empresa.
+ *
+ * Opera em dois modos (ver lib/env.ts):
+ * - PRODUCTION: Supabase Auth como identidade + Prisma para perfil/empresa.
+ * - PREVIEW: cookie de sessão + store em memória.
+ *
+ * Ambos retornam o mesmo `AppSession`, então nenhum componente de UI
+ * precisa saber qual modo está ativo.
  */
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
+import { isPreviewMode } from '@/lib/env'
+import { getPreviewSessionUserId } from '@/lib/preview-session'
+import { findMembershipByUserId, findUserById } from '@/lib/preview-store'
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -36,19 +44,48 @@ export interface AppSession {
 // ─────────────────────────────────────────────
 
 export async function getSession(): Promise<AppSession | null> {
+  if (isPreviewMode) {
+    const userId = await getPreviewSessionUserId()
+    if (!userId) return null
+
+    const member = findMembershipByUserId(userId)
+    if (!member) return null
+
+    return {
+      user: {
+        id: member.user.id,
+        name: member.user.name,
+        email: member.user.email,
+        avatar: member.user.avatar,
+      },
+      company: {
+        id: member.company.id,
+        name: member.company.name,
+        logo: member.company.logo,
+        plan: member.company.plan,
+        role: member.role,
+      },
+    }
+  }
+
   try {
     const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    if (!supabase) return null
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
     if (error || !user) return null
+
+    const prisma = await getPrisma()
+    if (!prisma) return null
 
     // Busca perfil e empresa ativa (primeira membership encontrada)
     const member = await prisma.companyMember.findFirst({
       where: { userId: user.id },
-      include: {
-        user: true,
-        company: true,
-      },
+      include: { user: true, company: true },
       orderBy: { createdAt: 'asc' },
     })
 
@@ -70,21 +107,58 @@ export async function getSession(): Promise<AppSession | null> {
       },
     }
   } catch {
-    // Se as env vars não estão configuradas, retorna null graciosamente
     return null
   }
 }
 
 // ─────────────────────────────────────────────
-// getSupabaseUser — apenas identidade, sem DB
+// getCurrentUser — apenas identidade, sem empresa
+// Usado por /onboarding, que roda antes de existir empresa
 // ─────────────────────────────────────────────
 
-export async function getSupabaseUser() {
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  if (isPreviewMode) {
+    const userId = await getPreviewSessionUserId()
+    if (!userId) return null
+
+    const user = findUserById(userId)
+    if (!user) return null
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+    }
+  }
+
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    return user
+    if (!supabase) return null
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    const prisma = await getPrisma()
+    const profile = prisma
+      ? await prisma.user.findUnique({ where: { id: user.id } })
+      : null
+
+    return {
+      id: user.id,
+      name: profile?.name ?? user.email ?? 'Usuário',
+      email: profile?.email ?? user.email ?? '',
+      avatar: profile?.avatar ?? null,
+    }
   } catch {
     return null
   }
+}
+
+/** true se existe identidade autenticada (mesmo sem empresa vinculada). */
+export async function hasIdentity(): Promise<boolean> {
+  return (await getCurrentUser()) !== null
 }
