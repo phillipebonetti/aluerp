@@ -1,0 +1,173 @@
+AluERP - Estrutura de Diretórios
+=================================
+
+project-root/
+├── app/                          ← Next.js App Router (NÃO alterar)
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── register/
+│   │   │   └── page.tsx
+│   │   ├── onboarding/
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
+│   └── (app)/
+│       ├── layout.tsx
+│       ├── dashboard/
+│       │   └── page.tsx
+│       ├── financeiro/
+│       │   └── page.tsx
+│       ├── clientes/
+│       │   └── page.tsx
+│       ├── obras/
+│       ├── fornecedores/
+│       ├── orçamentos/
+│       ├── os/
+│       ├── agenda/
+│       ├── relatórios/
+│       └── configurações/
+│
+├── components/                   ← Componentes legados (manter como está)
+│   ├── auth/
+│   │   ├── login-form.tsx
+│   │   ├── register-form.tsx
+│   │   └── onboarding-form.tsx
+│   ├── layout/
+│   │   ├── app-layout.tsx
+│   │   ├── header.tsx
+│   │   ├── sidebar.tsx
+│   │   └── theme-provider.tsx
+│   ├── dashboard/
+│   │   ├── charts.tsx
+│   │   └── dashboard-card.tsx
+│   └── ui/
+│       ├── button.tsx
+│       ├── badge.tsx
+│       ├── avatar.tsx
+│       ├── dropdown-menu.tsx
+│       ├── empty-state.tsx
+│       ├── page-header.tsx
+│       ├── data-table.tsx
+│       ├── status-badge.tsx
+│       ├── loading-state.tsx
+│       ├── separator.tsx
+│       ├── sheet.tsx
+│       ├── tooltip.tsx
+│       └── input.tsx
+│
+├── lib/                          ← Utilitários legados (manter como está)
+│   ├── auth.ts                   ← Será migrado para core/auth/
+│   ├── env.ts                    ← Será migrado para core/config/
+│   ├── utils.ts
+│   ├── constants.ts
+│   ├── mock-data.ts
+│   ├── preview-session.ts
+│   ├── preview-store.ts
+│   ├── prisma.ts
+│   ├── actions/
+│   │   └── auth.ts               ← Será migrado para modules/Auth/actions/
+│   └── supabase/
+│       ├── server.ts             ← Será migrado para core/supabase/
+│       └── client.ts             ← Será migrado para core/supabase/
+│
+├── core/                         ← NOVO: Infraestrutura compartilhada
+│   ├── index.ts                  ← Exports centralizados
+│   ├── auth/
+│   │   └── index.ts              ← Exports de lib/auth.ts
+│   ├── database/
+│   │   └── index.ts              ← Exports de lib/prisma.ts
+│   ├── supabase/
+│   │   └── index.ts              ← Exports de lib/supabase/*
+│   ├── config/
+│   │   └── index.ts              ← Exports de lib/constants.ts, lib/env.ts
+│   ├── permissions/
+│   │   └── index.ts              ← STUB: tipos RBAC (future)
+│   ├── errors/
+│   │   └── index.ts              ← STUB: classes de erro (future)
+│   └── logger/
+│       └── index.ts              ← STUB: sistema de logging (future)
+│
+├── modules/                      ← NOVO: Domínios de negócio
+│   ├── Auth/                     ← Autenticação (future: migrar de lib/actions/auth.ts)
+│   │   └── index.ts              ← STUB
+│   ├── Company/                  ← Empresas/Tenants
+│   │   └── index.ts              ← STUB
+│   ├── User/                     ← Usuários
+│   │   └── index.ts              ← STUB
+│   ├── Client/                   ← Clientes
+│   │   └── index.ts              ← STUB
+│   ├── Supplier/                 ← Fornecedores
+│   │   └── index.ts              ← STUB
+│   ├── Project/                  ← Obras/Projetos
+│   │   └── index.ts              ← STUB
+│   ├── Quote/                    ← Orçamentos
+│   │   └── index.ts              ← STUB
+│   ├── Financial/                ← Financeiro
+│   │   └── index.ts              ← STUB
+│   ├── ServiceOrder/             ← Ordens de Serviço
+│   │   └── index.ts              ← STUB
+│   ├── Schedule/                 ← Agenda
+│   │   └── index.ts              ← STUB
+│   ├── Invoice/                  ← Notas Fiscais
+│   │   └── index.ts              ← STUB
+│   ├── Report/                   ← Relatórios
+│   │   └── index.ts              ← STUB
+│   ├── Notification/             ← Notificações
+│   │   └── index.ts              ← STUB
+│   ├── Audit/                    ← Auditoria
+│   │   └── index.ts              ← STUB
+│   └── AI/                       ← IA/ML
+│       └── index.ts              ← STUB
+│
+├── prisma/
+│   ├── schema.prisma             ← Prisma schema (não alterado)
+│   └── migrations/
+│
+├── public/
+│   └── ... (assets)
+│
+├── middleware.ts                 ← Next.js middleware (não alterado)
+├── middleware.auth.ts            ← FUTURE: middleware de auth específico
+│
+├── ARCHITECTURE.md               ← Explicação completa (315 linhas)
+├── MODULES.md                    ← Guia para novos módulos (358 linhas)
+├── ARCHITECTURE_SUMMARY.md       ← Resumo executivo (250 linhas)
+├── STRUCTURE.txt                 ← Este arquivo
+│
+├── .architecturerc               ← Config da arquitetura
+├── next.config.mjs
+├── tailwind.config.ts
+├── tsconfig.json
+├── package.json
+├── prisma.config.ts
+├── middleware.ts
+├── app/globals.css
+│
+├── .env                          ← Variáveis locais
+├── .env.local
+├── .next/
+├── node_modules/
+│
+└── README.md
+
+
+Legenda
+=======
+
+NOVO         = Criado nesta refatoração
+STUB         = Arquivo vazio, pronto para implementação
+NÃO alterar  = Preservado 100%
+Será migrado = Manterá compatibilidade, depois será movido
+FUTURE       = Planejado para fases futuras
+
+
+Próximas Etapas
+===============
+
+Fase 2 (semana 1):    Migrar Auth (lib/auth.ts → core/auth/)
+Fase 3 (semana 2-3):  Primeiro módulo (Client ou Financial)
+Fase 4 (semana 3-4):  Core funcional (permissions, errors, logger)
+Fase 5 (semana 4+):   Escalabilidade (cache, jobs, workers)
+
