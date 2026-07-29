@@ -25,7 +25,7 @@ export class AssistenciaService {
   }
 
   // Chamados
-  async agendar Chamado(data: any, options: RepositoryOptions) {
+  async agendarChamado(data: any, options: RepositoryOptions) {
     // TODO: Implementar agendamento de chamado
     throw new Error('Not implemented')
   }
