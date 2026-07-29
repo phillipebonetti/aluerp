@@ -2,6 +2,7 @@ import { DashboardCard } from '@/components/dashboard/dashboard-card'
 import { CashFlowChart, EntradasSaidasChart, ExpensesChart } from '@/components/dashboard/charts'
 import { recentOrders } from '@/lib/mock-data'
 import { STATUS_COLORS } from '@/lib/constants'
+import { getDashboardKPIs } from '@/src/modules/dashboard/actions'
 import {
   Wallet,
   TrendingUp,
@@ -15,7 +16,26 @@ import {
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const kpisResult = await getDashboardKPIs()
+  const kpis = kpisResult.data || {
+    saldoAtual: 0,
+    entradasMes: 0,
+    saidasMes: 0,
+    lucroMes: 0,
+    osAbertas: 0,
+    obrasAtivas: 0,
+    clientesAtivos: 0,
+    vencidosPending: 0,
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value)
+  }
+
   return (
     <div className="p-6 max-w-screen-2xl mx-auto space-y-6">
       {/* Page header */}
@@ -28,14 +48,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <DashboardCard
           title="Saldo Atual"
-          value="R$ 0,00"
+          value={formatCurrency(kpis.saldoAtual)}
           icon={Wallet}
           variant="default"
           description="Conta corrente"
         />
         <DashboardCard
           title="Entradas do Mês"
-          value="R$ 0,00"
+          value={formatCurrency(kpis.entradasMes)}
           icon={TrendingUp}
           variant="positive"
           trend={0}
@@ -43,7 +63,7 @@ export default function DashboardPage() {
         />
         <DashboardCard
           title="Saídas do Mês"
-          value="R$ 0,00"
+          value={formatCurrency(kpis.saidasMes)}
           icon={TrendingDown}
           variant="negative"
           trend={0}
@@ -51,7 +71,7 @@ export default function DashboardPage() {
         />
         <DashboardCard
           title="Lucro do Mês"
-          value="R$ 0,00"
+          value={formatCurrency(kpis.lucroMes)}
           icon={DollarSign}
           variant="positive"
           trend={0}
@@ -67,7 +87,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider">OS Abertas</p>
-            <p className="text-2xl font-semibold text-foreground">0</p>
+            <p className="text-2xl font-semibold text-foreground">{kpis.osAbertas}</p>
           </div>
         </div>
         <div className="bg-card border border-border rounded-xl p-5 flex items-center gap-4">
@@ -76,7 +96,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Obras Ativas</p>
-            <p className="text-2xl font-semibold text-foreground">0</p>
+            <p className="text-2xl font-semibold text-foreground">{kpis.obrasAtivas}</p>
           </div>
         </div>
         <div className="bg-card border border-border rounded-xl p-5 flex items-center gap-4">
@@ -85,7 +105,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Clientes Ativos</p>
-            <p className="text-2xl font-semibold text-foreground">0</p>
+            <p className="text-2xl font-semibold text-foreground">{kpis.clientesAtivos}</p>
           </div>
         </div>
       </div>

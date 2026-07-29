@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { TransactionActions } from '@/modules/Transaction'
-import type { TransactionWithRelations } from '@/modules/Transaction/types'
+import { getTransactions, deleteTransaction } from '@/src/modules/financial/actions'
+import type { TransactionWithRelations } from '@/repositories'
 
 export function TransactionList() {
   const [transactions, setTransactions] = useState<TransactionWithRelations[]>([])
@@ -15,9 +15,9 @@ export function TransactionList() {
 
   const loadTransactions = async () => {
     setLoading(true)
-    const result = await TransactionActions.getTransactions()
+    const result = await getTransactions()
     if (result.data) {
-      setTransactions(result.data)
+      setTransactions(result.data as any)
     }
     setLoading(false)
   }
@@ -25,7 +25,7 @@ export function TransactionList() {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja deletar?')) return
 
-    const result = await TransactionActions.deleteTransaction(id)
+    const result = await deleteTransaction(id)
     if (result.error) {
       alert(result.error)
       return
