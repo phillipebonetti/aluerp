@@ -36,6 +36,7 @@ model Company {
   members         CompanyMember[]
   roles           Role[]
   permissions     Permission[]
+  employees       Employee[]
   clients         Client[]
   suppliers       Supplier[]
   projects        Project[]
@@ -44,6 +45,8 @@ model Company {
   transactions    Transaction[]
   bankAccounts    BankAccount[]
   costCenters     CostCenter[]
+  expenseCategories ExpenseCategory[]
+  incomeCategories  IncomeCategory[]
 
   @@index([plan])
   @@index([status])
@@ -149,6 +152,33 @@ model RolePermission {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// FUNCIONÁRIOS
+// ═══════════════════════════════════════════════════════════════
+
+model Employee {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  email           String?
+  phone           String?
+  role            EmployeeRole @default(OTHER)
+  commissionRate  Decimal  @db.Decimal(5, 2) @default(0)
+  status          EmployeeStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@index([email])
+  @@index([companyId, status])
+  @@map("employees")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CLIENTES
 // ═══════════════════════════════════════════════════════════════
 
@@ -173,6 +203,7 @@ model Client {
   addresses       ClientAddress[]
   quotes          Quote[]
   projects        Project[]
+  transactions    Transaction[]
 
   @@index([companyId])
   @@index([document])
@@ -313,6 +344,8 @@ model Project {
   documents       ProjectDocument[]
   costs           ProjectCost[]
   serviceOrders   ServiceOrder[]
+  quotes          Quote[]
+  transactions    Transaction[]
 
   @@index([companyId])
   @@index([clientId])
@@ -373,6 +406,7 @@ model Quote {
   id              String   @id @default(cuid())
   companyId       String
   clientId        String
+  projectId       String?
   number          String
   status          QuoteStatus @default(DRAFT)
   totalValue      Decimal  @db.Decimal(12, 2)
@@ -388,14 +422,18 @@ model Quote {
   // Relações
   company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   client          Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project         Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   items           QuoteItem[]
   versions        QuoteVersion[]
 
   @@unique([companyId, number])
   @@index([companyId])
   @@index([clientId])
+  @@index([projectId])
   @@index([status])
   @@index([createdAt])
+  @@index([companyId, projectId])
+  @@index([companyId, clientId])
   @@map("quotes")
 }
 
@@ -504,11 +542,45 @@ model CostCenter {
   @@map("cost_centers")
 }
 
+model ExpenseCategory {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("expense_categories")
+}
+
+model IncomeCategory {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("income_categories")
+}
+
 model Transaction {
   id              String   @id @default(cuid())
   companyId       String
   type            TransactionType
-  category        String
+  category        String?
   amount          Decimal  @db.Decimal(14, 2)
   description     String
   status          TransactionStatus @default(PENDING)
@@ -517,22 +589,36 @@ model Transaction {
   paymentDate     DateTime?
   notes           String?
   supplierId      String?
+  clientId        String?
+  projectId       String?
   bankAccountId   String?
   costCenterId    String?
+  expenseCategoryId String?
+  incomeCategoryId  String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relações
   company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  client          Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  project         Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
   costCenter      CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  expenseCategory ExpenseCategory? @relation(fields: [expenseCategoryId], references: [id], onDelete: SetNull)
+  incomeCategory  IncomeCategory? @relation(fields: [incomeCategoryId], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([type])
   @@index([status])
   @@index([dueDate])
   @@index([paymentDate])
+  @@index([clientId])
+  @@index([projectId])
+  @@index([companyId, status, dueDate])
+  @@index([companyId, type, paymentDate])
+  @@index([companyId, clientId])
+  @@index([companyId, projectId])
   @@map("transactions")
 }
 
@@ -687,4 +773,19 @@ enum DocumentFileType {
   PHOTO
   BLUEPRINT
   OTHER
+}
+
+enum EmployeeRole {
+  SELLER
+  TECHNICIAN
+  MANAGER
+  ADMIN
+  OTHER
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  ARCHIVED
 }
