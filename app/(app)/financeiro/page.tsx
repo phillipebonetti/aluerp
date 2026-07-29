@@ -1,6 +1,5 @@
 import { PageHeader } from '@/components/ui/page-header'
-import { EmptyState } from '@/components/ui/empty-state'
-import { Banknote } from 'lucide-react'
+import { TransactionList } from '@/components/transaction/transaction-list'
 
 export default function FinanceiroPage() {
   return (
@@ -8,16 +7,8 @@ export default function FinanceiroPage() {
       <PageHeader
         title="Financeiro"
         description="Controle completo das entradas, saídas e fluxo de caixa da empresa."
-        action={{ label: 'Nova Transação' }}
       />
-      <div className="bg-card border border-border rounded-xl">
-        <EmptyState
-          icon={Banknote}
-          title="Nenhuma transação registrada"
-          description="Comece registrando entradas e saídas financeiras para visualizar seu fluxo de caixa."
-          action={{ label: 'Adicionar Transação' }}
-        />
-      </div>
+      <TransactionList />
     </div>
   )
 }
