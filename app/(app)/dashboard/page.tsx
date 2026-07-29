@@ -1,39 +1,32 @@
-import { MoneyCard, MetricCard, SectionCard, DataTable } from '@/components/ui'
-import { CashFlowChart, EntradasSaidasChart, ExpensesChart } from '@/components/dashboard/charts'
+import { getDashboardData } from '@/src/modules/dashboard/actions'
+import { KPIIndicators } from '@/components/dashboard/kpi-indicators'
+import { MonthlyComparison } from '@/components/dashboard/monthly-comparison'
+import { AlertsWidget } from '@/components/dashboard/alerts-widget'
+import { TopClientsRanking } from '@/components/dashboard/top-clients-ranking'
+import { TopSellersRanking } from '@/components/dashboard/top-sellers-ranking'
+import { ProjectMetrics } from '@/components/dashboard/project-metrics'
+import { FinancialIndicators } from '@/components/dashboard/financial-indicators'
+import { CashFlowWidget } from '@/components/dashboard/cash-flow-widget'
+import { SectionCard } from '@/components/ui'
 import { recentOrders } from '@/lib/mock-data'
 import { STATUS_COLORS } from '@/lib/constants'
-import { getDashboardKPIs } from '@/src/modules/dashboard/actions'
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  ClipboardList,
-  HardHat,
-  Users,
-  ArrowRight,
-} from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { ArrowRight } from 'lucide-react'
 
 export default async function DashboardPage() {
-  const kpisResult = await getDashboardKPIs()
-  const kpis = kpisResult.data || {
-    saldoAtual: 0,
-    entradasMes: 0,
-    saidasMes: 0,
-    lucroMes: 0,
-    osAbertas: 0,
-    obrasAtivas: 0,
-    clientesAtivos: 0,
-    vencidosPending: 0,
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
+  const dashboardResult = await getDashboardData()
+  const dashboard = dashboardResult.data || {
+    kpis: {},
+    recentOrders: [],
+    recentTransactions: [],
+    topClients: [],
+    overduePendingTransactions: [],
+    cashFlow: [],
+    monthlyComparison: {},
+    alerts: [],
+    topSellers: [],
+    projectMetrics: {},
+    financialIndicators: {},
   }
 
   return (
@@ -44,40 +37,8 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground mt-1">Visão geral do desempenho da sua empresa.</p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <MoneyCard
-          title="Saldo Atual"
-          value={kpis.saldoAtual}
-          icon={Wallet}
-          variant="balance"
-          description="Conta corrente"
-        />
-        <MoneyCard
-          title="Entradas do Mês"
-          value={kpis.entradasMes}
-          icon={TrendingUp}
-          variant="income"
-          trend={0}
-          trendLabel="vs. mês anterior"
-        />
-        <MoneyCard
-          title="Saídas do Mês"
-          value={kpis.saidasMes}
-          icon={TrendingDown}
-          variant="expense"
-          trend={0}
-          trendLabel="vs. mês anterior"
-        />
-        <MoneyCard
-          title="Lucro do Mês"
-          value={kpis.lucroMes}
-          icon={DollarSign}
-          variant="income"
-          trend={0}
-          trendLabel="vs. mês anterior"
-        />
-      </div>
+      {/* KPI Indicators */}
+      <KPIIndicators kpis={dashboard.kpis} />
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -107,62 +68,70 @@ export default async function DashboardPage() {
         <EntradasSaidasChart />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          {/* Recent OS */}
-          <SectionCard
-            title="Ordens de Serviço Recentes"
-            description="Últimas movimentações do sistema"
-            footer={
-              <Link
-                href="/os"
-                className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
-              >
-                Ver todas
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            }
-          >
-            <DataTable
-              columns={[
-                {
-                  key: 'id',
-                  label: 'OS',
-                  render: (value) => <span className="text-xs font-mono font-medium">{value}</span>,
-                },
-                {
-                  key: 'cliente',
-                  label: 'Cliente',
-                  render: (value) => <span className="text-xs">{value}</span>,
-                },
-                {
-                  key: 'tipo',
-                  label: 'Tipo',
-                  className: 'hidden sm:table-cell',
-                  render: (value) => <span className="text-xs text-muted-foreground">{value}</span>,
-                },
-                {
-                  key: 'status',
-                  label: 'Status',
-                  render: (value) => (
-                    <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border', STATUS_COLORS[value])}>
-                      {value}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'valor',
-                  label: 'Valor',
-                  render: (value) => <span className="text-xs font-medium text-right">{value}</span>,
-                },
-              ]}
-              data={recentOrders}
-            />
-          </SectionCard>
-        </div>
-
-        <ExpensesChart />
+      {/* Alerts and Comparisons */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AlertsWidget alerts={dashboard.alerts} />
+        <MonthlyComparison data={dashboard.monthlyComparison} />
       </div>
+
+      {/* Financial and Project Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <FinancialIndicators indicators={dashboard.financialIndicators} />
+        <ProjectMetrics metrics={dashboard.projectMetrics} />
+      </div>
+
+      {/* Cash Flow Analysis */}
+      <CashFlowWidget data={dashboard.cashFlow} />
+
+      {/* Rankings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TopClientsRanking clients={dashboard.topClients} />
+        <TopSellersRanking sellers={dashboard.topSellers} />
+      </div>
+
+      {/* Recent Orders */}
+      <SectionCard
+        title="Ordens de Serviço Recentes"
+        description="Últimas movimentações do sistema"
+        footer={
+          <Link
+            href="/os"
+            className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
+          >
+            Ver todas
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        }
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase">OS</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase">Cliente</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase hidden sm:table-cell">Tipo</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs uppercase">Status</th>
+                <th className="text-right px-4 py-2 font-medium text-muted-foreground text-xs uppercase">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.map((order: any, i: number) => (
+                <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors last:border-0">
+                  <td className="px-4 py-3 text-xs font-mono">{order.id}</td>
+                  <td className="px-4 py-3 text-xs">{order.cliente}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{order.tipo}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_COLORS[order.status]}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-medium text-right">{order.valor}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
     </div>
   )
 }
