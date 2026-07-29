@@ -1,6 +1,7 @@
-// AluERP — Schema Prisma
+// AluERP — Schema Prisma Profissional
 // Banco: PostgreSQL via Supabase
 // Multi-tenant: cada empresa é um tenant isolado
+// Versão: 3.0.0 (Fundação de Banco de Dados)
 
 generator client {
   provider = "prisma-client"
@@ -11,70 +12,679 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─────────────────────────────────────────────
-// EMPRESA (Tenant)
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// CORE — INFRAESTRUTURA MULTIEMPRESA
+// ═══════════════════════════════════════════════════════════════
+
+// Empresa (Tenant)
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  cnpj      String?  @unique
-  phone     String?
-  email     String?
-  logo      String?
-  plan      Plan     @default(FREE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  cnpj            String?  @unique
+  phone           String?
+  email           String?
+  logo            String?
+  website         String?
+  timezone        String   @default("America/Sao_Paulo")
+  plan            Plan     @default(FREE)
+  status          CompanyStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
-  members CompanyMember[]
+  // Relações
+  members         CompanyMember[]
+  roles           Role[]
+  permissions     Permission[]
+  clients         Client[]
+  suppliers       Supplier[]
+  projects        Project[]
+  quotes          Quote[]
+  serviceOrders   ServiceOrder[]
+  transactions    Transaction[]
+  bankAccounts    BankAccount[]
+  costCenters     CostCenter[]
 
+  @@index([plan])
+  @@index([status])
+  @@index([deletedAt])
   @@map("companies")
 }
 
-// ─────────────────────────────────────────────
-// USUÁRIO
-// ─────────────────────────────────────────────
+// Usuário
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  avatar          String?
+  phone           String?
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
-  memberships CompanyMember[]
+  // Relações
+  memberships     CompanyMember[]
+  auditLogs       AuditLog[]
 
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
   @@map("users")
 }
 
-// ─────────────────────────────────────────────
-// MEMBRO DE EMPRESA (relação N:N com papel)
-// ─────────────────────────────────────────────
+// Membro de Empresa (N:N com papel)
 model CompanyMember {
-  id        String   @id @default(cuid())
-  companyId String
-  userId    String
-  role      Role     @default(VIEWER)
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String
+  roleId          String?
+  status          MemberStatus @default(ACTIVE)
+  joinedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
   @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
   @@map("company_members")
 }
 
-// ─────────────────────────────────────────────
+// Papéis RBAC
+model Role {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  members         CompanyMember[]
+  permissions     RolePermission[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("roles")
+}
+
+// Permissões
+model Permission {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  resource        String   // ex: clients, projects, financeiro
+  action          String   // ex: create, read, update, delete
+  createdAt       DateTime @default(now())
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  roles           RolePermission[]
+
+  @@unique([companyId, resource, action])
+  @@index([companyId])
+  @@map("permissions")
+}
+
+// Junction para Role x Permission
+model RolePermission {
+  id              String   @id @default(cuid())
+  roleId          String
+  permissionId    String
+
+  // Relações
+  role            Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission      Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLIENTES
+// ═══════════════════════════════════════════════════════════════
+
+model Client {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  type            ClientType @default(PERSON)
+  documentType    DocumentType @default(CPF)
+  document        String?
+  email           String?
+  phone           String?
+  status          ClientStatus @default(ACTIVE)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts        ClientContact[]
+  addresses       ClientAddress[]
+  quotes          Quote[]
+  projects        Project[]
+
+  @@index([companyId])
+  @@index([document])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("clients")
+}
+
+model ClientContact {
+  id              String   @id @default(cuid())
+  clientId        String
+  name            String
+  email           String?
+  phone           String?
+  role            String?
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_contacts")
+}
+
+model ClientAddress {
+  id              String   @id @default(cuid())
+  clientId        String
+  street          String
+  number          String?
+  complement      String?
+  neighborhood    String
+  city            String
+  state           String
+  zipCode         String?
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_addresses")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORNECEDORES
+// ═══════════════════════════════════════════════════════════════
+
+model Supplier {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  type            SupplierType @default(MATERIAL)
+  documentType    DocumentType @default(CNPJ)
+  document        String?
+  email           String?
+  phone           String?
+  status          SupplierStatus @default(ACTIVE)
+  notes           String?
+  paymentTerms    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts        SupplierContact[]
+  documents       SupplierDocument[]
+  transactions    Transaction[]
+
+  @@index([companyId])
+  @@index([document])
+  @@index([status])
+  @@index([type])
+  @@map("suppliers")
+}
+
+model SupplierContact {
+  id              String   @id @default(cuid())
+  supplierId      String
+  name            String
+  email           String?
+  phone           String?
+  role            String?
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  // Relações
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@map("supplier_contacts")
+}
+
+model SupplierDocument {
+  id              String   @id @default(cuid())
+  supplierId      String
+  type            DocumentFileType @default(OTHER)
+  url             String
+  fileName        String
+  uploadedAt      DateTime @default(now())
+
+  // Relações
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@map("supplier_documents")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OBRAS / PROJETOS
+// ═══════════════════════════════════════════════════════════════
+
+model Project {
+  id              String   @id @default(cuid())
+  companyId       String
+  clientId        String
+  name            String
+  description     String?
+  address         String
+  status          ProjectStatus @default(PLANNING)
+  startDate       DateTime?
+  endDate         DateTime?
+  totalValue      Decimal? @db.Decimal(12, 2)
+  costEstimated   Decimal? @db.Decimal(12, 2)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client          Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  photos          ProjectPhoto[]
+  documents       ProjectDocument[]
+  costs           ProjectCost[]
+  serviceOrders   ServiceOrder[]
+
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@index([startDate])
+  @@map("projects")
+}
+
+model ProjectPhoto {
+  id              String   @id @default(cuid())
+  projectId       String
+  url             String
+  caption         String?
+  uploadedAt      DateTime @default(now())
+
+  // Relações
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_photos")
+}
+
+model ProjectDocument {
+  id              String   @id @default(cuid())
+  projectId       String
+  type            DocumentFileType @default(OTHER)
+  url             String
+  fileName        String
+  uploadedAt      DateTime @default(now())
+
+  // Relações
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_documents")
+}
+
+model ProjectCost {
+  id              String   @id @default(cuid())
+  projectId       String
+  description     String
+  amount          Decimal  @db.Decimal(12, 2)
+  category        String?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_costs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORÇAMENTOS / COTAÇÕES
+// ═══════════════════════════════════════════════════════════════
+
+model Quote {
+  id              String   @id @default(cuid())
+  companyId       String
+  clientId        String
+  number          String
+  status          QuoteStatus @default(DRAFT)
+  totalValue      Decimal  @db.Decimal(12, 2)
+  validUntil      DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  sentAt          DateTime?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client          Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  items           QuoteItem[]
+  versions        QuoteVersion[]
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id              String   @id @default(cuid())
+  quoteId         String
+  description     String
+  quantity        Decimal  @db.Decimal(10, 3)
+  unit            String   @default("un")
+  unitPrice       Decimal  @db.Decimal(12, 2)
+  totalPrice      Decimal  @db.Decimal(12, 2)
+  discount        Decimal? @db.Decimal(12, 2) @default(0)
+  order           Int
+
+  // Relações
+  quote           Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@map("quote_items")
+}
+
+model QuoteVersion {
+  id              String   @id @default(cuid())
+  quoteId         String
+  versionNumber   Int
+  status          QuoteStatus
+  totalValue      Decimal  @db.Decimal(12, 2)
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  quote           Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, versionNumber])
+  @@index([quoteId])
+  @@map("quote_versions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORDENS DE SERVIÇO
+// ═══════════════════════════════════════════════════════════════
+
+model ServiceOrder {
+  id              String   @id @default(cuid())
+  companyId       String
+  projectId       String
+  number          String
+  status          ServiceOrderStatus @default(DRAFT)
+  scheduledDate   DateTime?
+  startDate       DateTime?
+  endDate         DateTime?
+  description     String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
+  @@map("service_orders")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FINANCEIRO
+// ═══════════════════════════════════════════════════════════════
+
+model BankAccount {
+  id              String   @id @default(cuid())
+  companyId       String
+  bankName        String
+  accountNumber   String
+  accountType     String
+  balance         Decimal  @db.Decimal(14, 2) @default(0)
+  status          BankAccountStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  @@index([companyId])
+  @@map("bank_accounts")
+}
+
+model CostCenter {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  status          CostCenterStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("cost_centers")
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  companyId       String
+  type            TransactionType
+  category        String
+  amount          Decimal  @db.Decimal(14, 2)
+  description     String
+  status          TransactionStatus @default(PENDING)
+  paymentMethod   PaymentMethod
+  dueDate         DateTime?
+  paymentDate     DateTime?
+  notes           String?
+  supplierId      String?
+  bankAccountId   String?
+  costCenterId    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  costCenter      CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([type])
+  @@index([status])
+  @@index([dueDate])
+  @@index([paymentDate])
+  @@map("transactions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDITORIA
+// ═══════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  userId          String
+  action          String
+  resource        String
+  resourceId      String
+  changes         String?  // JSON serializado
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ENUMS
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
 enum Plan {
   FREE
   PRO
   ENTERPRISE
 }
 
-enum Role {
-  OWNER
-  ADMIN
-  MANAGER
-  VIEWER
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  ARCHIVED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  INACTIVE
+}
+
+enum ClientType {
+  PERSON
+  COMPANY
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum SupplierType {
+  MATERIAL
+  SERVICE
+  LABOR
+  OTHER
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum ServiceOrderStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  CANCELLED
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  DEBIT_CARD
+  CREDIT_CARD
+  TRANSFER
+  PIXED
+  OTHER
+}
+
+enum BankAccountStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+enum CostCenterStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
+  RG
+  PASSPORT
+}
+
+enum DocumentFileType {
+  CONTRACT
+  INVOICE
+  RECEIPT
+  PHOTO
+  BLUEPRINT
+  OTHER
 }
