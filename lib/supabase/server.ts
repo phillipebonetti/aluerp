@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { SUPABASE_URL, SUPABASE_ANON_KEY, hasSupabase } from '@/lib/env'
+import { SUPABASE_URL, SUPABASE_ANON_KEY, hasSupabase } from '@/src/core/config'
 
 /**
  * Cria o client Supabase para Server Components e Server Actions.

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import type { SessionUser, SessionCompany } from '@/lib/auth'
+import type { SessionUser, SessionCompany } from '@/src/core/auth'
 
 interface AppLayoutProps {
   children: React.ReactNode

@@ -1,7 +1,7 @@
 'use server'
 
-import { getPrisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { getPrisma } from '@/src/core/database'
+import { getSession } from '@/src/core/auth'
 import { CreateCategorySchema, UpdateCategorySchema } from './category-schemas'
 import type { CreateCategoryInput, UpdateCategoryInput } from './category-schemas'
 

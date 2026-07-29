@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/auth'
+import { getSession } from '@/src/core/auth'
 import { AppLayout } from '@/components/layout/app-layout'
 
 export default async function AppSectionLayout({ children }: { children: React.ReactNode }) {

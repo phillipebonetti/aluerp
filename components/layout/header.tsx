@@ -15,8 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { logoutAction } from '@/lib/actions/auth'
-import type { SessionUser, SessionCompany } from '@/lib/auth'
+import { logoutAction } from '@/src/modules/auth/actions'
+import type { SessionUser, SessionCompany } from '@/src/core/auth'
 
 interface HeaderProps {
   onMenuClick?: () => void

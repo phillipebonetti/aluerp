@@ -1,20 +1,20 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { getPrisma } from '@/lib/prisma'
-import { isPreviewMode } from '@/lib/env'
+import { createServerClient as createClient } from '@/src/core/supabase'
+import { getPrisma } from '@/src/core/database'
+import { isPreviewMode } from '@/src/core/config'
 import {
   setPreviewSession,
   getPreviewSessionUserId,
   clearPreviewSession,
-} from '@/lib/preview-session'
+} from '@/src/core/auth'
 import {
   findUserByEmail,
   createUser,
   createCompany,
   findMembershipByUserId,
-} from '@/lib/preview-store'
+} from '@/src/core/auth'
 
 export interface ActionResult {
   error?: string

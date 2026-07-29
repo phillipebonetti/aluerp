@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { registerAction } from '@/lib/actions/auth'
+import { registerAction } from '@/src/modules/auth/actions'
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)

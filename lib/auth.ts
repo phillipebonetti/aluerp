@@ -8,11 +8,11 @@
  * Ambos retornam o mesmo `AppSession`, então nenhum componente de UI
  * precisa saber qual modo está ativo.
  */
-import { createClient } from '@/lib/supabase/server'
-import { getPrisma } from '@/lib/prisma'
-import { isPreviewMode } from '@/lib/env'
-import { getPreviewSessionUserId } from '@/lib/preview-session'
-import { findMembershipByUserId, findUserById } from '@/lib/preview-store'
+import { createServerClient as createClient } from '@/src/core/supabase'
+import { getPrisma } from '@/src/core/database'
+import { isPreviewMode } from '@/src/core/config'
+import { getPreviewSessionUserId } from '@/src/core/auth'
+import { findMembershipByUserId, findUserById } from '@/src/core/auth'
 
 // ─────────────────────────────────────────────
 // Tipos

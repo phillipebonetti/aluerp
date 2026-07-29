@@ -2,7 +2,7 @@
 // ================
 // Centraliza toda a lógica de autenticação (Supabase + Preview Mode)
 
-export * from '@/lib/auth'
-export * from '@/lib/preview-session'
-export * from '@/lib/preview-store'
-export * from '@/lib/env'
+export * from '@/src/core/auth'
+export * from '@/src/core/auth'
+export * from '@/src/core/auth'
+export * from '@/src/core/config'

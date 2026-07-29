@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { loginAction } from '@/lib/actions/auth'
+import { loginAction } from '@/src/modules/auth/actions'
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)

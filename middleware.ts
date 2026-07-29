@@ -6,7 +6,7 @@ import {
   SUPABASE_ANON_KEY,
   hasSupabase,
   PREVIEW_SESSION_COOKIE,
-} from '@/lib/env'
+} from '@/src/core/config'
 
 function isProtectedPath(pathname: string) {
   return PROTECTED_ROUTES.some(

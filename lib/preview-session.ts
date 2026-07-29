@@ -7,7 +7,7 @@
  * e este módulo não é chamado.
  */
 import { cookies } from 'next/headers'
-import { PREVIEW_SESSION_COOKIE } from '@/lib/env'
+import { PREVIEW_SESSION_COOKIE } from '@/src/core/config'
 
 const MAX_AGE = 60 * 60 * 24 * 7 // 7 dias
 

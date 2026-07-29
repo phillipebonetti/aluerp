@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getSession, hasIdentity } from '@/lib/auth'
+import { getSession, hasIdentity } from '@/src/core/auth'
 
 export default async function RootPage() {
   const session = await getSession()

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Building2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { createCompanyAction } from '@/lib/actions/auth'
+import { createCompanyAction } from '@/src/modules/auth/actions'
 
 export function OnboardingForm({ userName }: { userName: string }) {
   const [error, setError] = useState<string | null>(null)

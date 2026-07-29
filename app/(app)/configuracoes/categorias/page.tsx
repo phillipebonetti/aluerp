@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/auth'
+import { getSession } from '@/src/core/auth'
 import { redirect } from 'next/navigation'
 import { CategoriesTabs } from '@/components/financial/categories-tabs'
 
