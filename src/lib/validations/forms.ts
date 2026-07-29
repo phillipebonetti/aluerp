@@ -172,3 +172,39 @@ export const configuracoesFormSchema = z.object({
 })
 
 export type ConfiguracoesFormData = z.infer<typeof configuracoesFormSchema>
+
+// Configurações da Empresa (CompanySetting)
+export const companySettingsSchema = z.object({
+  // Dados da empresa
+  razaoSocial: z.string().min(3, 'Razão social obrigatória').optional(),
+  cnpj: brazilianCNPJ.optional().or(z.literal('')),
+  logo: z.instanceof(File).optional(),
+  
+  // Contato
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  whatsapp: brazilianPhone.optional().or(z.literal('')),
+  
+  // Financeiro
+  comissaoPercentual: percentage.optional(),
+  impostoPercentual: percentage.optional(),
+  
+  // Horários
+  horarioAbertura: z.string().regex(/^\d{2}:\d{2}$/, 'Formato de hora inválido').optional(),
+  horarioFechamento: z.string().regex(/^\d{2}:\d{2}$/, 'Formato de hora inválido').optional(),
+  
+  // Metas
+  metaVendas: currency.optional(),
+  metaClientes: currency.optional(),
+  
+  // Numeração automática
+  proximoNumeroOS: z.coerce.number().int().min(1).optional(),
+  proximoNumeroOrcamento: z.coerce.number().int().min(1).optional(),
+  proximoNumeroNota: z.coerce.number().int().min(1).optional(),
+  
+  // Assinaturas e documentos
+  assinaturaPadrao: z.instanceof(File).optional(),
+  carimboNota: z.instanceof(File).optional(),
+  rodapePadrao: z.string().optional(),
+})
+
+export type CompanySettingsData = z.infer<typeof companySettingsSchema>

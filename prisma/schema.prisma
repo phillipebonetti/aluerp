@@ -47,6 +47,7 @@ model Company {
   costCenters     CostCenter[]
   expenseCategories ExpenseCategory[]
   incomeCategories  IncomeCategory[]
+  settings        CompanySetting?
 
   @@index([plan])
   @@index([status])
@@ -654,6 +655,51 @@ model AuditLog {
   @@index([resource])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// Configurações da Empresa
+model CompanySetting {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  
+  // Dados da empresa
+  logo            String?  // URL ou base64
+  razaoSocial     String?
+  cnpj            String?
+  
+  // Contato
+  email           String?
+  whatsapp        String?
+  
+  // Financeiro
+  comissaoPercentual Float? @default(5.0)
+  impostoPercentual Float? @default(15.0)
+  
+  // Horários e metas
+  horarioAbertura String? @default("09:00")
+  horarioFechamento String? @default("18:00")
+  metaVendas      Float?
+  metaClientes    Float?
+  
+  // Numeração automática
+  proximoNumeroOS         Int @default(1)
+  proximoNumeroOrcamento  Int @default(1)
+  proximoNumeroNota       Int @default(1)
+  
+  // Assinaturas e documentos
+  assinaturaPadrao String?
+  carimboNota      String?
+  rodapePadrao     String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@map("company_settings")
 }
 
 // ═══════════════════════════════════════════════════════════════
