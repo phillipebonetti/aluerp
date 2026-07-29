@@ -48,6 +48,9 @@ model Company {
   expenseCategories ExpenseCategory[]
   incomeCategories  IncomeCategory[]
   settings        CompanySetting?
+  projectDocuments ProjectDocument[] @relation("ProjectDocumentCompany")
+  supplierDocuments SupplierDocument[] @relation("SupplierDocumentCompany")
+  projectPhotos    ProjectPhoto[] @relation("ProjectPhotoCompany")
 
   @@index([plan])
   @@index([status])
@@ -306,16 +309,28 @@ model SupplierContact {
 
 model SupplierDocument {
   id              String   @id @default(cuid())
+  companyId       String
   supplierId      String
   type            DocumentFileType @default(OTHER)
-  url             String
   fileName        String
+  fileSize        Int      // bytes
+  mimeType        String?
+  version         Int      @default(1)
+  isLatest        Boolean  @default(true)
+  description     String?
+  tags            String?  // JSON array
+  uploadedBy      String
   uploadedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
   // Relações
+  company         Company @relation("SupplierDocumentCompany", fields: [companyId], references: [id], onDelete: Cascade)
   supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
   @@index([supplierId])
+  @@index([uploadedAt])
   @@map("supplier_documents")
 }
 
@@ -359,31 +374,75 @@ model Project {
 
 model ProjectPhoto {
   id              String   @id @default(cuid())
+  companyId       String
   projectId       String
-  url             String
+  fileName        String
+  fileSize        Int      // bytes
+  mimeType        String?  // image/jpeg, etc
   caption         String?
+  orderIndex      Int      @default(0)
+  uploadedBy      String
   uploadedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
   // Relações
+  company         Company @relation("ProjectPhotoCompany", fields: [companyId], references: [id], onDelete: Cascade)
   project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
   @@index([projectId])
+  @@index([uploadedAt])
   @@map("project_photos")
 }
 
 model ProjectDocument {
   id              String   @id @default(cuid())
+  companyId       String
   projectId       String
   type            DocumentFileType @default(OTHER)
-  url             String
   fileName        String
+  fileSize        Int      // bytes
+  mimeType        String?
+  version         Int      @default(1)
+  isLatest        Boolean  @default(true)
+  description     String?
+  tags            String?  // JSON array
+  uploadedBy      String
   uploadedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
   // Relações
+  company         Company @relation("ProjectDocumentCompany", fields: [companyId], references: [id], onDelete: Cascade)
   project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions        DocumentVersion[]
 
+  @@unique([projectId, fileName, version])
+  @@index([companyId])
   @@index([projectId])
+  @@index([uploadedAt])
   @@map("project_documents")
+}
+
+// Versionamento de arquivos
+model DocumentVersion {
+  id              String   @id @default(cuid())
+  documentId      String
+  version         Int
+  url             String
+  fileName        String
+  fileSize        Int      // bytes
+  uploadedBy      String
+  uploadedAt      DateTime @default(now())
+  description     String?  // O que mudou nesta versão
+
+  // Relações
+  document        ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("document_versions")
 }
 
 model ProjectCost {
@@ -480,9 +539,9 @@ model QuoteVersion {
   @@map("quote_versions")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════��═════
 // ORDENS DE SERVIÇO
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════���
 
 model ServiceOrder {
   id              String   @id @default(cuid())
