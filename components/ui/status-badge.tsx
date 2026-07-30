@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { STATUS_COLORS } from '@/lib/constants'
+import { STATUS_COLORS } from '@/src/core/config/constants'
 
 interface StatusBadgeProps {
   status: string

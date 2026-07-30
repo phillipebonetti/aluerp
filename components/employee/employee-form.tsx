@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import * as EmployeeActions from '@/modules/Employee/actions'
-import type { Employee } from '@/modules/Employee/types'
+import * as EmployeeActions from '@/src/modules/employee/actions'
+import type { Employee } from '@/src/modules/employee/types'
 
 interface EmployeeFormProps {
   employee?: Employee | null

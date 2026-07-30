@@ -9,7 +9,7 @@
  * do módulo. Assim o modo preview nunca carrega o Prisma, e a ausência do
  * client gerado não derruba o app inteiro na raiz.
  */
-import type { PrismaClient } from '@/lib/generated/prisma/client'
+import type { PrismaClient } from '../../../lib/generated/prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -23,7 +23,7 @@ export async function getPrisma(): Promise<PrismaClient | null> {
   if (globalForPrisma.prisma) return globalForPrisma.prisma
 
   try {
-    const { PrismaClient: Client } = await import('@/lib/generated/prisma/client')
+    const { PrismaClient: Client } = await import('../../../lib/generated/prisma/client')
 
     const client = new Client({
       accelerateUrl: process.env.DATABASE_URL ?? 'prisma://placeholder',

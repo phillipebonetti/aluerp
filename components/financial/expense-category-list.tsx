@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import * as FinancialActions from '@/modules/Financial/category-actions'
+import * as FinancialActions from '@/src/modules/financial/actions'
 
 interface Category {
   id: string

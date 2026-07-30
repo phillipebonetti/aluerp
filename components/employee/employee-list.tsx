@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmployeeForm } from './employee-form'
-import * as EmployeeActions from '@/modules/Employee/actions'
-import type { Employee } from '@/modules/Employee/types'
+import * as EmployeeActions from '@/src/modules/employee/actions'
+import type { Employee } from '@/src/modules/employee/types'
 
 export function EmployeeList() {
   const [employees, setEmployees] = useState<Employee[]>([])

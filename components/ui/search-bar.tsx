@@ -1,3 +1,5 @@
+'use client'
+
 import { cn } from '@/lib/utils'
 import { Search, X } from 'lucide-react'
 import { InputHTMLAttributes, useRef, useEffect } from 'react'

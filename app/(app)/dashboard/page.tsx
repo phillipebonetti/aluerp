@@ -9,7 +9,7 @@ import { FinancialIndicators } from '@/components/dashboard/financial-indicators
 import { CashFlowWidget } from '@/components/dashboard/cash-flow-widget'
 import { SectionCard } from '@/components/ui'
 import { recentOrders } from '@/lib/mock-data'
-import { STATUS_COLORS } from '@/lib/constants'
+import { STATUS_COLORS } from '@/src/core/config/constants'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 

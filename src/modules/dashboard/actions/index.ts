@@ -1,7 +1,7 @@
 'use server'
 
 import { getCurrentUser } from '@/src/core/auth'
-import { DashboardService } from '@/services'
+import { DashboardService } from '@/src/services/dashboard.service'
 
 export async function getDashboardData() {
   const user = await getCurrentUser()

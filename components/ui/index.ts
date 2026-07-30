@@ -8,7 +8,7 @@ export { Button, buttonVariants } from './button'
 export type { } from './button'
 
 // Cards
-export { DashboardCard } from './dashboard-card'
+export { DashboardCard } from '../dashboard/dashboard-card'
 export { MoneyCard } from './money-card'
 export { MetricCard } from './metric-card'
 export { SectionCard } from './section-card'
