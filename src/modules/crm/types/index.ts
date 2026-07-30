@@ -57,3 +57,65 @@ export interface CRMTask {
   createdAt: Date
   updatedAt: Date
 }
+
+// Pipeline related types
+export interface PipelineStageData {
+  stage: CRMOpportunity['stage']
+  count: number
+  totalValue: number
+  avgProbability: number
+}
+
+export interface ConversionData {
+  stage: CRMOpportunity['stage']
+  count: number
+  converted: number
+  rate: number
+}
+
+export interface FunnelData {
+  stage: string
+  count: number
+  value: number
+  percentage: number
+}
+
+export interface CRMStats {
+  totalLeads: number
+  totalOpportunities: number
+  pipelineValue: number
+  conversionRate: number
+  avgDealValue: number
+  closedDeals: number
+  lostDeals: number
+  activeTasks: number
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  description?: string
+  startTime: Date
+  endTime: Date
+  type: 'meeting' | 'call' | 'email' | 'reminder'
+  attendees?: string[]
+  location?: string
+  relatedTo?: 'lead' | 'opportunity'
+  relatedId?: string
+  companyId: string
+  createdBy: string
+}
+
+export interface LeadSource {
+  name: string
+  count: number
+  percentage: number
+}
+
+export interface SalesRepPerformance {
+  repId: string
+  repName: string
+  closed: number
+  pending: number
+  totalValue: number
+}
