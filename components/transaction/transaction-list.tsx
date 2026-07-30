@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { getTransactions, deleteTransaction } from '@/src/modules/financial/actions'
-import type { TransactionWithRelations } from '@/repositories'
+import { listTransactions, deleteTransaction } from '@/src/modules/financial/actions'
+import type { TransactionWithRelations } from '@/src/repositories'
 
 export function TransactionList() {
   const [transactions, setTransactions] = useState<TransactionWithRelations[]>([])
@@ -15,7 +15,7 @@ export function TransactionList() {
 
   const loadTransactions = async () => {
     setLoading(true)
-    const result = await getTransactions()
+    const result = await listTransactions()
     if (result.data) {
       setTransactions(result.data as any)
     }

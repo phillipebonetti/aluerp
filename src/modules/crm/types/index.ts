@@ -7,12 +7,21 @@ export interface CRMLead {
   id: string
   companyId: string
   name: string
-  email: string
-  phone: string
-  source: 'website' | 'email' | 'phone' | 'referral' | 'social' | 'other'
-  status: 'novo' | 'em_contato' | 'interessado' | 'proposta' | 'perdido'
-  value?: number
-  expectedCloseDate?: Date
+  email?: string
+  phone?: string
+  whatsapp?: string
+  cpf?: string
+  cnpj?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  address?: string
+  source: 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE' | 'INDICACAO' | 'SITE' | 'MARKETPLACE' | 'OUTRO'
+  interests?: string
+  estimatedValue?: number
+  responsibleId?: string
+  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'UNQUALIFIED' | 'CONVERTED' | 'LOST'
+  lastContactAt?: Date
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -21,12 +30,17 @@ export interface CRMLead {
 export interface CRMOpportunity {
   id: string
   companyId: string
-  clientId: string
-  name: string
-  stage: 'prospecção' | 'qualificação' | 'proposta' | 'negociação' | 'fechamento'
+  leadId: string
+  clientId?: string
+  stage: 'NEW_LEAD' | 'FIRST_CONTACT' | 'VISIT_SCHEDULED' | 'QUOTE_SENT' | 'NEGOTIATION' | 'CLOSED' | 'LOST'
   value: number
   probability: number
-  expectedCloseDate: Date
+  responsibleId?: string
+  lastContactAt?: Date
+  nextActionDate?: Date
+  expectedCloseDate?: Date
+  status: 'OPEN' | 'CLOSED_WON' | 'CLOSED_LOST'
+  lossReasonId?: string
   createdAt: Date
   updatedAt: Date
 }

@@ -221,6 +221,7 @@ model Client {
   quotes          Quote[]
   projects        Project[]
   transactions    Transaction[]
+  opportunities   Opportunity[]
 
   @@index([companyId])
   @@index([document])
@@ -473,7 +474,7 @@ model ProjectCost {
 
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════��════════════
 
 model Quote {
   id              String   @id @default(cuid())
@@ -706,7 +707,7 @@ model Transaction {
 
 // ═══════════════════════════════════════════════════════════════
 // AUDITORIA
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════���═══════════════════════════════════════
 
 model AuditLog {
   id              String   @id @default(cuid())
@@ -790,7 +791,7 @@ model Lead {
   state             String?
   zipCode           String?
   address           String?
-  source            LeadSource @default(OTHER)
+  source            LeadSource @default(OUTRO)
   interests         String?   // JSON array: ["Box", "Portão", "Cobertura", ...]
   estimatedValue    Float?
   responsibleId     String?
