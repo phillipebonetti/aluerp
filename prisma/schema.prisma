@@ -197,6 +197,9 @@ model Employee {
   opportunitiesResponsible Opportunity[]
   activities      Activity[]
   reminders       Reminder[]
+  responsibleStages WorkStage[]
+  responsibleTasks WorkTask[]
+  workTeams       WorkTeam[]
 
   @@index([companyId])
   @@index([status])
@@ -386,6 +389,15 @@ model Project {
   serviceOrders   ServiceOrder[]
   quotes          Quote[]
   transactions    Transaction[]
+  stages          WorkStage[]
+  tasks           WorkTask[] @relation("WorkTasks")
+  checklists      TaskChecklist[] @relation("TaskChecklists")
+  measurements    WorkMeasurement[] @relation("WorkMeasurements")
+  team            WorkTeam[] @relation("WorkTeam")
+  occurrences     WorkOccurrence[] @relation("WorkOccurrences")
+  diaries         WorkDiary[] @relation("WorkDiary")
+  comments        WorkComment[] @relation("WorkComments")
+  attachments     WorkAttachment[] @relation("WorkAttachments")
 
   @@index([companyId])
   @@index([clientId])
@@ -482,6 +494,251 @@ model ProjectCost {
   @@map("project_costs")
 }
 
+// ═══════════════════════════════════════════════════════════════
+// GESTÃO DE OBRAS — ETAPAS, TAREFAS, CHECKLISTS
+// ═══════════════════════════════════════════════════════════════
+
+model WorkStage {
+  id              String   @id @default(cuid())
+  projectId       String
+  companyId       String
+  name            String
+  position        Int      @default(0)
+  status          WorkStageStatus @default(PENDING)
+  plannedStartDate DateTime?
+  plannedEndDate   DateTime?
+  actualStartDate  DateTime?
+  actualEndDate    DateTime?
+  responsibleId   String?
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkStageCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  responsible     Employee? @relation(fields: [responsibleId], references: [id], onSetNull)
+  tasks           WorkTask[]
+
+  @@unique([projectId, position])
+  @@index([projectId])
+  @@index([companyId])
+  @@index([status])
+  @@map("work_stages")
+}
+
+model WorkTask {
+  id              String   @id @default(cuid())
+  projectId       String
+  stageId         String
+  companyId       String
+  title           String
+  description     String?
+  status          WorkTaskStatus @default(TODO)
+  priority        TaskPriority @default(NORMAL)
+  responsibleId   String?
+  dueDate         DateTime?
+  startDate       DateTime?
+  completedDate   DateTime?
+  estimatedHours  Int?
+  actualHours     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation("WorkTasks", fields: [projectId], references: [id], onDelete: Cascade)
+  stage           WorkStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkTaskCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  responsible     Employee? @relation(fields: [responsibleId], references: [id], onSetNull)
+  checklists      TaskChecklist[]
+  comments        WorkComment[]
+  attachments     WorkAttachment[]
+
+  @@index([projectId])
+  @@index([stageId])
+  @@index([companyId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("work_tasks")
+}
+
+model TaskChecklist {
+  id              String   @id @default(cuid())
+  taskId          String
+  projectId       String
+  companyId       String
+  title           String
+  isCompleted     Boolean  @default(false)
+  completedBy     String?
+  completedAt     DateTime?
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  task            WorkTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  project         Project @relation("TaskChecklists", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("TaskChecklistCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([companyId])
+  @@map("task_checklists")
+}
+
+model WorkMeasurement {
+  id              String   @id @default(cuid())
+  projectId       String
+  companyId       String
+  environment     String?  // Cômodo, local
+  height          Decimal? @db.Decimal(8, 2)
+  width           Decimal? @db.Decimal(8, 2)
+  depth           Decimal? @db.Decimal(8, 2)
+  quantity        Int      @default(1)
+  unit            String?  // m², m, px
+  notes           String?
+  photoUrl        String?
+  sketchUrl       String?
+  recordedBy      String
+  recordedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation("WorkMeasurements", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkMeasurementCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@map("work_measurements")
+}
+
+model WorkTeam {
+  id              String   @id @default(cuid())
+  projectId       String
+  employeeId      String
+  companyId       String
+  role            String?  // Chefe de Obra, Vidraceiro, etc.
+  status          TeamMemberStatus @default(ASSIGNED)
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  workedHours     Int      @default(0)
+  addedBy         String
+  addedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation("WorkTeam", fields: [projectId], references: [id], onDelete: Cascade)
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  company         Company @relation("WorkTeamCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, employeeId])
+  @@index([projectId])
+  @@index([employeeId])
+  @@index([companyId])
+  @@map("work_teams")
+}
+
+model WorkOccurrence {
+  id              String   @id @default(cuid())
+  projectId       String
+  companyId       String
+  type            OccurrenceType @default(OTHER)
+  title           String
+  description     String?
+  priority        OccurrencePriority @default(NORMAL)
+  status          OccurrenceStatus @default(OPEN)
+  reportedBy      String
+  reportedAt      DateTime @default(now())
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  photoUrl        String?
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation("WorkOccurrences", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkOccurrenceCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@index([status])
+  @@index([priority])
+  @@map("work_occurrences")
+}
+
+model WorkDiary {
+  id              String   @id @default(cuid())
+  projectId       String
+  companyId       String
+  date            DateTime @default(now())
+  author          String
+  description     String
+  weather         String?  // Ensolarado, Chuvoso, etc.
+  weather_temp    Int?     // Temperatura em Celsius
+  teamPresent     String?  // JSON array de IDs
+  materialsUsed   String?  // JSON array
+  photoUrl        String?
+  videoUrl        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  project         Project @relation("WorkDiary", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkDiaryCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@index([date])
+  @@map("work_diaries")
+}
+
+model WorkComment {
+  id              String   @id @default(cuid())
+  taskId          String?
+  projectId       String
+  companyId       String
+  author          String
+  content         String
+  mentions        String?  // JSON array de user IDs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  task            WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project         Project @relation("WorkComments", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkCommentCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([companyId])
+  @@map("work_comments")
+}
+
+model WorkAttachment {
+  id              String   @id @default(cuid())
+  taskId          String?
+  projectId       String
+  companyId       String
+  fileName        String
+  fileSize        Int
+  mimeType        String?
+  fileUrl         String
+  uploadedBy      String
+  uploadedAt      DateTime @default(now())
+  description     String?
+
+  // Relações
+  task            WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project         Project @relation("WorkAttachments", fields: [projectId], references: [id], onDelete: Cascade)
+  company         Company @relation("WorkAttachmentCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([companyId])
+  @@map("work_attachments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORÇAMENTOS / COTAÇÕES
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
 // ═══════════════════════════════════════��══════════��════════════
@@ -1410,4 +1667,59 @@ enum NotificationLogStatus {
   SENT
   FAILED
   RETRYING
+}
+
+enum WorkStageStatus {
+  PENDING
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkTaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum OccurrenceType {
+  ATRASO
+  RETRABALHO
+  FALTA_MATERIAL
+  ACIDENTE
+  PROBLEMA_CLIENTE
+  PROBLEMA_TECNICO
+  CONDERCAO_CLIMA
+  OTHER
+}
+
+enum OccurrencePriority {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum OccurrenceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum TeamMemberStatus {
+  ASSIGNED
+  WORKING
+  COMPLETED
+  REMOVED
 }
