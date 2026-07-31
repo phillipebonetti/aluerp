@@ -41,79 +41,9 @@ model Company {
   suppliers       Supplier[]
   projects        Project[]
   quotes          Quote[]
-  serviceOrders   ServiceOrder[]
   transactions    Transaction[]
-  bankAccounts    BankAccount[]
-  costCenters     CostCenter[]
-  expenseCategories ExpenseCategory[]
-  incomeCategories  IncomeCategory[]
-  settings        CompanySetting?
-  projectDocuments ProjectDocument[] @relation("ProjectDocumentCompany")
-  supplierDocuments SupplierDocument[] @relation("SupplierDocumentCompany")
-  projectPhotos    ProjectPhoto[] @relation("ProjectPhotoCompany")
-  leads            Lead[]
-  opportunities    Opportunity[]
-  activities       Activity[]
-  reminders        Reminder[]
-  crmHistory       CRMHistory[]
-  lossReasons      LossReason[]
-  sessions         UserSession[]
-  notifications    Notification[]
-  notificationPreferences NotificationPreference[]
-  notificationTemplates NotificationTemplate[]
-  notificationSettings NotificationSettings?
+  postSales       PostSale[]
 
-  @@index([plan])
-  @@index([status])
-  @@index([deletedAt])
-  @@map("companies")
-}
-
-// Usuário
-model User {
-  id              String   @id @default(cuid())
-  name            String
-  email           String   @unique
-  avatar          String?
-  phone           String?
-  status          UserStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
-
-  // Relações
-  memberships     CompanyMember[]
-  auditLogs       AuditLog[]
-  crmHistory      CRMHistory[]
-  sessions        UserSession[]
-  passwordResets  PasswordReset[]
-  loginAttempts   LoginAttempt[]
-  notifications   Notification[]
-  notificationPreference NotificationPreference?
-
-  @@index([email])
-  @@index([status])
-  @@index([deletedAt])
-  @@map("users")
-}
-
-// Membro de Empresa (N:N com papel)
-model CompanyMember {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String
-  roleId          String?
-  status          MemberStatus @default(ACTIVE)
-  joinedAt        DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role            Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
-
-  @@unique([companyId, userId])
   @@index([companyId])
   @@index([userId])
   @@map("company_members")
@@ -200,6 +130,7 @@ model Employee {
   responsibleStages WorkStage[]
   responsibleTasks WorkTask[]
   workTeams       WorkTeam[]
+  salesGoals      SalesGoal[]
 
   @@index([companyId])
   @@index([status])
@@ -398,6 +329,7 @@ model Project {
   diaries         WorkDiary[] @relation("WorkDiary")
   comments        WorkComment[] @relation("WorkComments")
   attachments     WorkAttachment[] @relation("WorkAttachments")
+  postSale        PostSale?
 
   @@index([companyId])
   @@index([clientId])
@@ -1238,6 +1170,105 @@ model LossReason {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// METAS E INDICADORES COMERCIAIS
+// ═══════════════════════════════════════════════════════════════
+
+model SalesGoal {
+  id              String   @id @default(cuid())
+  companyId       String
+  employeeId      String?  // Se null, é meta de equipe
+  month           Int
+  year            Int
+  revenueTarget   Float
+  quantityTarget  Int?
+  conversionTarget Float?  // Percentual
+  status          GoalStatus @default(IN_PROGRESS)
+  achievedRevenue Float   @default(0)
+  achievedQuantity Int    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee        Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, year, month, employeeId])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([year, month])
+  @@map("sales_goals")
+}
+
+model CommercialMetrics {
+  id              String   @id @default(cuid())
+  companyId       String
+  period          String   // "2024-01" (YYYY-MM)
+  leadsGenerated  Int      @default(0)
+  leadsConverted  Int      @default(0)
+  opportunitiesOpen Int    @default(0)
+  opportunitiesClosed Int  @default(0)
+  averageTicket   Float    @default(0)
+  totalRevenue    Float    @default(0)
+  conversionRate  Float    @default(0)  // Percentual
+  averageClosingTime Int   @default(0)  // Dias
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, period])
+  @@index([companyId])
+  @@map("commercial_metrics")
+}
+
+model PostSale {
+  id              String   @id @default(cuid())
+  companyId       String
+  projectId       String
+  clientId        String
+  status          PostSaleStatus @default(IN_PROGRESS)
+  deliveryDate    DateTime?
+  warrantyMonths  Int      @default(12)
+  warrantyEndDate DateTime?
+  satisfactionScore Int?
+  issues          String?  // JSON array de problemas
+  lastContactDate DateTime?
+  nextFollowDate  DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId])
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@map("post_sales")
+}
+
+model LeadOrigin {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  icon            String?  // Material Icon name
+  order           Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("lead_origins")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SEGURANÇA — SESSÕES E AUTENTICAÇÃO
 // ═══════════════════════════════════════════════════════════════
 
@@ -1722,4 +1753,21 @@ enum TeamMemberStatus {
   WORKING
   COMPLETED
   REMOVED
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ACHIEVED
+  EXCEEDED
+  FAILED
+}
+
+enum PostSaleStatus {
+  IN_PROGRESS
+  WARRANTY_ACTIVE
+  WARRANTY_EXPIRED
+  MAINTENANCE_SCHEDULED
+  COMPLETED
+  PROBLEM_REPORTED
 }
