@@ -1,59 +1,55 @@
 /**
- * UI Components Library
- * Componentes reutilizáveis padronizados para AluERP
+ * UI Components - Base Components
+ * Componentes reutilizáveis de base
  */
 
-// Core
-export { Button, buttonVariants } from './button'
-export type { } from './button'
+// Base UI
+export { Avatar } from './avatar'
+export { Badge } from './badge'
+export { Button } from './button'
+export { Separator } from './separator'
+export { Sheet } from './sheet'
+export { Tooltip } from './tooltip'
+export { Dropdown } from './dropdown-menu'
+
+// Display
+export { EmptyState } from './empty-state'
+export { LoadingState } from './loading-state'
+export { SuspenseBoundary } from './suspense-boundary'
 
 // Cards
-export { DashboardCard } from '../dashboard/dashboard-card'
-export { MoneyCard } from './money-card'
 export { MetricCard } from './metric-card'
+export { MoneyCard } from './money-card'
 export { SectionCard } from './section-card'
-export type { MoneyCardProps } from './money-card'
-export type { MetricCardProps } from './metric-card'
+export { LoadingCard } from './loading-card'
 
-// Data Display
+// Tables
 export { DataTable } from './data-table'
 export { DataTableAdvanced } from './data-table-advanced'
-export { ListItem } from './list-item'
-export { StatGroup } from './stat-group'
-export type { DataTableProps } from './data-table'
 
-// Form Components
+// Forms
 export { FormInput } from './form-input'
-export { FormTextarea } from './form-textarea'
 export { FormSelect } from './form-select'
+export { FormTextarea } from './form-textarea'
 export { FormDatePicker } from './form-date-picker'
+export { FormField } from './form-field'
 export { FormSection } from './form-section'
 
-// Search & Filter
-export { SearchBar } from './search-bar'
-export { FilterBar } from './filter-bar'
-export type { FilterItem } from './filter-bar'
-
-// Chart & Analytics
-export { DashboardChart } from './dashboard-chart'
+// Dialogs & Modals
+export { Modal } from './modal'
+export { ConfirmDialog } from './confirm-dialog'
+export { Drawer } from './drawer'
 
 // Layout
 export { PageHeader } from './page-header'
-export { Badge } from './badge'
-export { Separator } from './separator'
-
-// Dialogs & Modals
-export { ConfirmDialog } from './confirm-dialog'
-export { Modal } from './modal'
-export { Drawer } from './drawer'
-
-// States
-export { EmptyState } from './empty-state'
-export { Skeleton, DashboardSkeleton, TableSkeleton, LoadingCard } from './loading-state'
-
-// Utilities
-export { Avatar, AvatarImage, AvatarFallback } from './avatar'
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip'
+export { FilterBar } from './filter-bar'
+export { SearchBar } from './search-bar'
+export { ListItem } from './list-item'
+export { StatGroup } from './stat-group'
 export { StatusBadge } from './status-badge'
-export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './dropdown-menu'
-export { Sheet, SheetTrigger, SheetContent } from './sheet'
+
+// Charts
+export { DashboardChart } from './dashboard-chart'
+
+// Standard Input
+export { Input } from './input'
