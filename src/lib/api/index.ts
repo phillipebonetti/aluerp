@@ -3,4 +3,3 @@
  * Formatação, interceptores, tratamento de erros.
  */
 
-// TODO: Adicionar utilities API

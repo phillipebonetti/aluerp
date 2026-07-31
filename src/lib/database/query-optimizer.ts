@@ -55,12 +55,10 @@ class QueryOptimizer {
     // Verifica cache existente
     const cached = this.cache.get(cacheKey)
     if (cached && this.isCacheValid(cached)) {
-      console.log(`[v0] Cache hit: ${cacheKey}`)
       return cached.data as T
     }
 
     // Executa query
-    console.log(`[v0] Cache miss: ${cacheKey}`)
     const data = await queryFn()
 
     // Armazena no cache
@@ -81,7 +79,6 @@ class QueryOptimizer {
       key.startsWith(namespace)
     )
     keysToDelete.forEach((key) => this.cache.delete(key))
-    console.log(`[v0] Invalidated ${keysToDelete.length} cache entries`)
   }
 
   /**
@@ -89,7 +86,6 @@ class QueryOptimizer {
    */
   clear(): void {
     this.cache.clear()
-    console.log('[v0] Cache cleared')
   }
 
   /**

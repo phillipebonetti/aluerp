@@ -3,4 +3,3 @@
  * Exporta interfaces e helpers globais.
  */
 
-// TODO: Implementar tipos compartilhados

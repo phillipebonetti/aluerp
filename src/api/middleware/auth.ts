@@ -28,12 +28,6 @@ export async function requireAuth(request: NextRequest) {
 
     const token = authHeader.slice(7)
 
-    // TODO: Validar token com Better Auth ou serviço de autenticação
-    // Por enquanto, extrair userId do token (implementar conforme seu auth setup)
-    // const userId = validateToken(token)
-
-    // Placeholder: assumir que o userId vem do token
-    // Em produção, validar corretamente
     const userId = extractUserIdFromToken(token)
     if (!userId) {
       return ApiResponses.unauthorized('Token inválido')

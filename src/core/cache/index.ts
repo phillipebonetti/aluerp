@@ -3,4 +3,3 @@
  * Exporta estratégia de cache.
  */
 
-// TODO: Implementar cache strategy

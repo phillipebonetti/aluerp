@@ -21,7 +21,6 @@ export function useMemoized<T>(
     const cached = cacheRef.current.get(key)
 
     if (cached) {
-      console.log('[v0] Memoization hit')
       return cached
     }
 

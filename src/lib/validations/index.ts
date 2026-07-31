@@ -3,4 +3,3 @@
  * Compartilhados entre frontend e backend.
  */
 
-// TODO: Adicionar schemas Zod

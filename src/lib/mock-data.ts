@@ -28,5 +28,3 @@ export const recentOrders = [
   { id: '#OS-0086', cliente: 'Escritório Neto', tipo: 'Esquadria Completa', status: 'Em orçamento', valor: 'R$ 12.400', data: '17 Jul' },
   { id: '#OS-0085', cliente: 'Residência Lima', tipo: 'Box Banheiro', status: 'Concluída', valor: 'R$ 1.900', data: '16 Jul' },
 ]
-
-// statusColors movido para lib/constants.ts como STATUS_COLORS

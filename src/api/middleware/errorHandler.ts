@@ -56,16 +56,13 @@ export function handleApiError(error: unknown): NextResponse {
   // Erros do Prisma
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2002') {
-      // Unique constraint violation
       const field = (error.meta?.target as string[])?.[0] || 'campo'
       return ApiResponses.conflict(`${field} já existe`)
     }
     if (error.code === 'P2025') {
-      // Record not found
       return ApiResponses.notFound('Recurso não encontrado')
     }
     if (error.code === 'P2003') {
-      // Foreign key constraint violation
       return ApiResponses.unprocessableEntity('Referência inválida')
     }
   }

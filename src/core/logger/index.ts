@@ -3,4 +3,3 @@
  * Exporta utilities de log estruturado.
  */
 
-// TODO: Implementar logging centralizado

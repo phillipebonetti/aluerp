@@ -3,4 +3,3 @@
  * Exporta tipos e utilities de erro.
  */
 
-// TODO: Implementar erro handling centralizado
