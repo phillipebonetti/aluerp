@@ -57,6 +57,7 @@ model Company {
   reminders        Reminder[]
   crmHistory       CRMHistory[]
   lossReasons      LossReason[]
+  sessions         UserSession[]
 
   @@index([plan])
   @@index([status])
@@ -80,6 +81,9 @@ model User {
   memberships     CompanyMember[]
   auditLogs       AuditLog[]
   crmHistory      CRMHistory[]
+  sessions        UserSession[]
+  passwordResets  PasswordReset[]
+  loginAttempts   LoginAttempt[]
 
   @@index([email])
   @@index([status])
@@ -474,7 +478,7 @@ model ProjectCost {
 
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ══════════════════════════════════════════════════��════════════
+// ═══════════════════════════════════════��══════════��════════════
 
 model Quote {
   id              String   @id @default(cuid())
@@ -707,7 +711,7 @@ model Transaction {
 
 // ═══════════════════════════════════════════════════════════════
 // AUDITORIA
-// ═══════════════════════���═══════════════════════════════════════
+// ═══════════���═══════════���═══════════════════════════════════════
 
 model AuditLog {
   id              String   @id @default(cuid())
@@ -775,7 +779,7 @@ model CompanySetting {
 
 // ═══════════════════════════════════════════════════════════════
 // CRM — GESTÃO DE RELACIONAMENTO COM CLIENTES
-// ═══════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════��═════
 
 // Lead (Prospect)
 model Lead {
@@ -968,6 +972,71 @@ model LossReason {
   @@unique([companyId, name])
   @@index([companyId])
   @@map("loss_reasons")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEGURANÇA — SESSÕES E AUTENTICAÇÃO
+// ═══════════════════════════════════════════════════════════════
+
+model UserSession {
+  id              String   @id @default(cuid())
+  userId          String
+  companyId       String
+  deviceName      String?
+  browser         String?
+  operatingSystem String?
+  ipAddress       String?
+  lastActivityAt  DateTime @default(now()) @updatedAt
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("user_sessions")
+}
+
+model PasswordReset {
+  id              String   @id @default(cuid())
+  userId          String
+  token           String   @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+model LoginAttempt {
+  id              String   @id @default(cuid())
+  userId          String?
+  email           String
+  ipAddress       String?
+  browser         String?
+  success         Boolean  @default(false)
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  // Relações (userId optional para failed attempts)
+  user            User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([success])
+  @@map("login_attempts")
 }
 
 // ═══════════════════════════════════════════════════════════════
