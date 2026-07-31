@@ -43,10 +43,13 @@ model Company {
   quotes          Quote[]
   transactions    Transaction[]
   postSales       PostSale[]
+  reportSchedules     ReportSchedule[]
+  dashboardLayouts    DashboardLayout[]
+  reportTemplates     ReportTemplate[]
+  reportExports       ReportExport[]
 
-  @@index([companyId])
-  @@index([userId])
-  @@map("company_members")
+  @@index([plan])
+  @@index([status])
 }
 
 // Papéis RBAC
@@ -1770,4 +1773,113 @@ enum PostSaleStatus {
   MAINTENANCE_SCHEDULED
   COMPLETED
   PROBLEM_REPORTED
+}
+
+enum ReportType {
+  FINANCIAL
+  COMMERCIAL
+  WORKS
+  EXECUTIVE
+  CUSTOM
+}
+
+enum ExportStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RELATÓRIOS E BUSINESS INTELLIGENCE
+// ═══════════════════════════════════════════════════════════════
+
+model ReportSchedule {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  type            ReportType @default(FINANCIAL)
+  frequency       String   @default("MONTHLY") // DAILY, WEEKLY, MONTHLY
+  time            String   @default("09:00") // HH:mm format
+  dayOfWeek       Int?     // 0-6 (0=Sunday)
+  dayOfMonth      Int?     // 1-31
+  recipients      String   // JSON array de emails
+  format          String   @default("PDF") // PDF, EXCEL, CSV
+  filters         String?  // JSON com filtros
+  lastSent        DateTime?
+  nextScheduled   DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("report_schedules")
+}
+
+model DashboardLayout {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String
+  name            String   @default("Padrão")
+  widgets         String   // JSON array de widget configs
+  columnCount     Int      @default(3)
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId, isDefault])
+  @@index([companyId])
+  @@index([userId])
+  @@map("dashboard_layouts")
+}
+
+model ReportTemplate {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  type            ReportType @default(FINANCIAL)
+  description     String?
+  sections        String   // JSON array de seções
+  defaultFilters  String?  // JSON com filtros padrão
+  isPublic        Boolean  @default(false)
+  usedCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([type])
+  @@map("report_templates")
+}
+
+model ReportExport {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String
+  type            String   // FINANCIAL, COMMERCIAL, WORKS
+  format          String   // PDF, EXCEL, CSV
+  status          ExportStatus @default(PROCESSING)
+  fileUrl         String?
+  fileSize        Int?
+  errorMessage    String?
+  generatedAt     DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@map("report_exports")
 }
