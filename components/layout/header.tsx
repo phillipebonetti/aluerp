@@ -1,12 +1,11 @@
 'use client'
 
-import { Bell, Search, Sun, Moon, ChevronDown, Menu } from 'lucide-react'
+import { Search, Sun, Moon, ChevronDown, Menu } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 import { logoutAction } from '@/src/modules/auth/actions'
 import type { SessionUser, SessionCompany } from '@/src/core/auth'
 
@@ -87,39 +87,9 @@ export function Header({ onMenuClick, user, company }: HeaderProps) {
         </Button>
 
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button className="relative flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent" />
-              </button>
-            }
-          />
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuLabel>
-              <div className="flex items-center justify-between">
-                <span>Notificações</span>
-                <Badge variant="secondary" className="text-[10px]">3 novas</Badge>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {[
-              { title: 'OS #0042 aprovada', desc: 'Portão deslizante — Residência Silva', time: '2 min' },
-              { title: 'Vencimento próximo', desc: 'Fatura #0018 vence em 2 dias', time: '1h' },
-              { title: 'Orçamento visualizado', desc: 'Cliente João viu o orçamento', time: '3h' },
-            ].map((n, i) => (
-              <DropdownMenuItem key={i} className="flex gap-3 p-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">{n.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{n.desc}</p>
-                </div>
-                <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {user && (
+          <NotificationBell userId={user.id} companyId={user.companyId} />
+        )}
 
         {/* Separator */}
         <div className="w-px h-5 bg-border mx-1" />

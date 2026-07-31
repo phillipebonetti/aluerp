@@ -58,6 +58,10 @@ model Company {
   crmHistory       CRMHistory[]
   lossReasons      LossReason[]
   sessions         UserSession[]
+  notifications    Notification[]
+  notificationPreferences NotificationPreference[]
+  notificationTemplates NotificationTemplate[]
+  notificationSettings NotificationSettings?
 
   @@index([plan])
   @@index([status])
@@ -84,6 +88,8 @@ model User {
   sessions        UserSession[]
   passwordResets  PasswordReset[]
   loginAttempts   LoginAttempt[]
+  notifications   Notification[]
+  notificationPreference NotificationPreference?
 
   @@index([email])
   @@index([status])
@@ -709,7 +715,7 @@ model Transaction {
   @@map("transactions")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════���════════════════════════════
 // AUDITORIA
 // ═══════════���═══════════���═══════════════════════════════════════
 
@@ -779,7 +785,7 @@ model CompanySetting {
 
 // ═══════════════════════════════════════════════════════════════
 // CRM — GESTÃO DE RELACIONAMENTO COM CLIENTES
-// ═════════════════════════════════════════════════════════��═════
+// ═════════���═══════════════════════════════════════════════��═════
 
 // Lead (Prospect)
 model Lead {
@@ -1040,6 +1046,128 @@ model LoginAttempt {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// NOTIFICAÇÕES
+// ═══════════════════════════════════════════════════════════════
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  companyId       String
+  title           String
+  message         String
+  type            NotificationType @default(INFO)
+  priority        NotificationPriority @default(NORMAL)
+  category        NotificationCategory @default(SYSTEM)
+  status          NotificationStatus @default(UNREAD)
+  actionUrl       String?
+  icon            String?
+  readAt          DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  logs            NotificationLog[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationLog {
+  id              String   @id @default(cuid())
+  notificationId  String
+  channel         NotificationChannel @default(INTERNAL)
+  status          NotificationLogStatus @default(PENDING)
+  error           String?
+  sentAt          DateTime?
+  attemptNumber   Int      @default(1)
+  nextRetryAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  // Relações
+  notification    Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+model NotificationPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  companyId       String
+  emailEnabled    Boolean  @default(true)
+  pushEnabled     Boolean  @default(true)
+  whatsappEnabled Boolean  @default(false)
+  internalEnabled Boolean  @default(true)
+  silentMode      Boolean  @default(false)
+  silentStart     String?  // HH:mm
+  silentEnd       String?  // HH:mm
+  categories      String[] @default([]) // JSON array de categorias habilitadas
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("notification_preferences")
+}
+
+model NotificationTemplate {
+  id              String   @id @default(cuid())
+  companyId       String
+  code            String
+  name            String
+  subject         String?
+  template        String   // HTML template com {{variables}}
+  type            NotificationType @default(INFO)
+  category        NotificationCategory @default(SYSTEM)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("notification_templates")
+}
+
+model NotificationSettings {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUser        String?
+  smtpPassword    String?
+  smtpFrom        String?
+  pushEnabled     Boolean  @default(false)
+  whatsappEnabled Boolean  @default(false)
+  whatsappApiKey  String?
+  maxRetries      Int      @default(3)
+  retryDelay      Int      @default(300) // segundos
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ENUMS
 // ═══════════════════════════════════════════════════════════════
 
@@ -1235,4 +1363,51 @@ enum ReminderPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum NotificationPriority {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum NotificationCategory {
+  SISTEMA
+  FINANCEIRO
+  OBRAS
+  CLIENTES
+  ORCAMENTOS
+  FORNECEDORES
+  VENDAS
+  USUARIOS
+  BACKUP
+  INTEGRACAO
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum NotificationChannel {
+  INTERNAL
+  EMAIL
+  PUSH
+  WHATSAPP
+}
+
+enum NotificationLogStatus {
+  PENDING
+  SENT
+  FAILED
+  RETRYING
 }
