@@ -64,6 +64,9 @@ model Company {
   aiUsageLogs     AIUsageLog[]
   auditLogs       AuditLog[]
   auditRetentionPolicy AuditRetentionPolicy?
+  backupConfig    BackupConfiguration?
+  backups         Backup[]
+  backupLogs      BackupLog[]
 
   @@index([plan])
   @@index([status])
@@ -235,7 +238,7 @@ model ClientAddress {
 
 // ═══════════════════════════════════════════════════════════════
 // FORNECEDORES
-// ═══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════��══════
 
 model Supplier {
   id              String   @id @default(cuid())
@@ -693,7 +696,7 @@ model WorkAttachment {
 // ORÇAMENTOS / COTAÇÕES
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ═══════════════════════════════��═══════��══════════��════════════
+// ════════════════���══════════════��═══════��══════════��════════════
 
 model Quote {
   id              String   @id @default(cuid())
@@ -2527,4 +2530,135 @@ model AuditRetentionPolicy {
   company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   
   @@map("audit_retention_policies")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BACKUP E RESTAURAÇÃO
+// ═══════════════════════════════════════════════════════════════
+
+enum BackupFrequency {
+  MANUAL
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+model BackupConfiguration {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  
+  // Agendamento
+  frequency       BackupFrequency @default(DAILY)
+  scheduledHour   Int      @default(2)      // 0-23
+  scheduledDay    Int?     @default(1)      // Para WEEKLY (0-6) e MONTHLY (1-31)
+  
+  // Configurações
+  retainBackups   Int      @default(30)     // Manter últimos N backups
+  autoDelete      Boolean  @default(true)
+  
+  // Notificações
+  notifyEmail     String?
+  notifyOnFailure Boolean  @default(true)
+  
+  // Controle
+  isEnabled       Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("backup_configurations")
+}
+
+model Backup {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Informações
+  name            String
+  description     String?
+  
+  // Status
+  status          BackupStatus @default(PENDING)
+  
+  // Dados do backup
+  size            BigInt?  // Tamanho em bytes
+  fileName        String?  // Nome do arquivo armazenado
+  fileUrl         String?  // URL para download (se armazenado em cloud)
+  
+  // Conteúdo
+  includesDatabase     Boolean @default(true)
+  includesUploads      Boolean @default(true)
+  includesPDFs         Boolean @default(true)
+  includesLogos        Boolean @default(true)
+  includesAttachments  Boolean @default(true)
+  includesXML          Boolean @default(true)
+  
+  // Tipo
+  type            String   @default("MANUAL") // MANUAL, AUTOMATIC, SCHEDULED
+  
+  // Quem criou
+  createdBy       String
+  createdByName   String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  // Restauração
+  lastRestoredAt  DateTime?
+  lastRestoredBy  String?
+  
+  // Metadados
+  metadata        String?  // JSON com info do backup
+  errorMessage    String?
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([type])
+  @@map("backups")
+}
+
+model BackupLog {
+  id              String   @id @default(cuid())
+  companyId       String
+  backupId        String?
+  
+  // Ação
+  action          String   // BACKUP_STARTED, BACKUP_COMPLETED, RESTORE_STARTED, RESTORE_COMPLETED
+  
+  // Usuário
+  userId          String
+  userName        String?
+  
+  // Detalhes
+  details         String?  // JSON com detalhes da operação
+  errorMessage    String?
+  success         Boolean  @default(true)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([backupId])
+  @@index([createdAt])
+  @@map("backup_logs")
 }
