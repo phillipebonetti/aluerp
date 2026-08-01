@@ -62,6 +62,7 @@ model Company {
   aiDocuments     AIGeneratedDocument[]
   aiProviderConfig AIProviderConfig?
   aiUsageLogs     AIUsageLog[]
+  auditLogs       AuditLog[]
 
   @@index([plan])
   @@index([status])
@@ -2546,4 +2547,106 @@ model AIUsageLog {
   @@index([companyId])
   @@index([createdAt])
   @@map("ai_usage_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDITORIA - LOGS DE TODAS AS AÇÕES DO SISTEMA
+// ═══════════════════════════════════════════════════════════════
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  DUPLICATE
+  EXPORT
+  IMPORT
+  APPROVE
+  REJECT
+  CANCEL
+  STATUS_CHANGE
+  PERMISSION_CHANGE
+  CONFIG_CHANGE
+  BACKUP
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  PASSWORD_RESET
+  PASSWORD_CHANGE
+  PROFILE_UPDATE
+  COMMISSION_UPDATE
+  ATTACHMENT_UPLOAD
+  ATTACHMENT_DELETE
+}
+
+enum AuditModule {
+  CLIENTS
+  SUPPLIERS
+  WORKS
+  WORK_ORDERS
+  BUDGETS
+  EXPENSES
+  REVENUES
+  ACCOUNTS_PAYABLE
+  ACCOUNTS_RECEIVABLE
+  PIX_TRANSACTIONS
+  ATTACHMENTS
+  USERS
+  PERMISSIONS
+  SETTINGS
+  INTEGRATIONS
+  REPORTS
+  AUTH
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Usuário que executou
+  userId          String
+  userName        String
+  userEmail       String
+  userRole        String?
+  
+  // Ação e contexto
+  module          AuditModule
+  action          AuditAction
+  
+  // Entidade afetada
+  entity          String   // Cliente, Fornecedor, Obra, OS, Orçamento, etc
+  entityId        String
+  entityName      String?  // Nome para referência rápida
+  
+  // Dados antes e depois
+  oldData         String?  // JSON da entidade antes da mudança
+  newData         String?  // JSON da entidade após a mudança
+  changedFields   String?  // JSON array com campos alterados
+  
+  // Contexto da requisição
+  ipAddress       String?
+  userAgent       String?  // Browser, device info
+  
+  // Descrição legível
+  description     String?
+  
+  // Status
+  success         Boolean  @default(true)
+  errorMessage    String?
+  
+  // Timestamp
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([userId])
+  @@index([entity])
+  @@index([entityId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt])
+  @@index([companyId, entity, entityId])
+  @@map("audit_logs")
 }
