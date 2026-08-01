@@ -85,6 +85,12 @@ model Company {
   commissionRules        CommissionRule[] // GO LIVE 2
   commissionPayments     CommissionPayment[] // GO LIVE 2
   commissionHistories    CommissionHistory[] // GO LIVE 2
+  financialAccounts      FinancialAccount[] // GO LIVE 3
+  expenseCategories      ExpenseCategory[] // GO LIVE 3
+  costCenters            CostCenter[] // GO LIVE 3
+  cashMovements          CashMovement[] // GO LIVE 3
+  financialForecasts     FinancialForecast[] // GO LIVE 3
+  financialAlerts        FinancialAlert[] // GO LIVE 3
 
   @@index([plan])
   @@index([status])
@@ -475,7 +481,7 @@ model ProjectCost {
   @@map("project_costs")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═════════════════════════════════════���═════════════════════════
 // GESTÃO DE OBRAS — ETAPAS, TAREFAS, CHECKLISTS
 // ══════════════════════════════════════��════════════════════════
 
@@ -3569,4 +3575,175 @@ model ClientFeedback {
   @@index([companyId])
   @@index([clientId])
   @@map("client_feedback")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GO LIVE 3 — FLUXO DE CAIXA E DASHBOARD FINANCEIRO
+// ═══════════════════════════════════════════════════════════════
+
+// Contas Financeiras (Bancos, Caixa, Poupança)
+model FinancialAccount {
+  id             String   @id @default(cuid())
+  companyId      String
+  name           String // Ex: "Conta Principal", "Poupança"
+  type           String   @default("CONTA_CORRENTE") // CONTA_CORRENTE, CONTA_POUPANCA, CAIXA
+  bankName       String?
+  accountNumber  String?
+  branch         String?
+  balance        Decimal  @default(0) @db.Decimal(15, 2)
+  initialBalance Decimal  @default(0) @db.Decimal(15, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relações
+  company   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements CashMovement[]
+  forecasts FinancialForecast[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("financial_accounts")
+}
+
+// Categorias de Despesa/Receita
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String // Ex: "Aluguel", "Folha de Pagamento", "Material"
+  type      String   @default("VARIAVEL") // FIXA, VARIAVEL
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements CashMovement[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("expense_categories")
+}
+
+// Centros de Custo
+model CostCenter {
+  id                   String   @id @default(cuid())
+  companyId            String
+  name                 String // Ex: "Obra A", "Administrativo"
+  description          String?
+  allocationPercentage Decimal  @default(100) @db.Decimal(5, 2)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relações
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements CashMovement[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("cost_centers")
+}
+
+// Movimentações de Caixa
+model CashMovement {
+  id           String  @id @default(cuid())
+  companyId    String
+  accountId    String
+  categoryId   String?
+  costCenterId String?
+
+  // Tipo e classificação
+  type        String  @default("ENTRADA") // ENTRADA, SAIDA, TRANSFERENCIA, AJUSTE
+  description String
+  value       Decimal @db.Decimal(15, 2)
+
+  // Origem
+  sourceType String? // OS, ORCAMENTO, COMISSAO, MANUAL, PAGAMENTO, RECEBIMENTO
+  sourceId   String? // ID da OS, Orçamento, etc
+
+  // Status
+  status String @default("PREVISTA") // PREVISTA, CONFIRMADA, CANCELADA
+
+  // Datas
+  movementDate   DateTime // Data efetiva/prevista
+  competenceDate DateTime? // Data de competência (financeiro)
+  confirmedAt    DateTime?
+
+  // Auditoria
+  createdBy   String?
+  confirmedBy String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account    FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category   ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  costCenter CostCenter?      @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([accountId])
+  @@index([status])
+  @@index([type])
+  @@index([movementDate])
+  @@index([sourceType, sourceId])
+  @@map("cash_movements")
+}
+
+// Previsão de Fluxo de Caixa
+model FinancialForecast {
+  id        String @id @default(cuid())
+  companyId String
+  accountId String
+
+  // Data de previsão
+  forecastDate DateTime
+
+  // Valores
+  estimatedBalance Decimal @db.Decimal(15, 2)
+  estimatedInflow  Decimal @db.Decimal(15, 2)
+  estimatedOutflow Decimal @db.Decimal(15, 2)
+
+  // Fonte dos dados
+  calculatedAt DateTime @default(now())
+
+  // Relações
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, accountId, forecastDate])
+  @@index([companyId])
+  @@index([accountId])
+  @@index([forecastDate])
+  @@map("financial_forecasts")
+}
+
+// Alertas Financeiros
+model FinancialAlert {
+  id        String @id @default(cuid())
+  companyId String
+
+  // Tipo de alerta
+  alertType String // VENCIDO, VENCENDO_HOJE, CAIXA_NEGATIVO, RECEBIMENTO_ATRASADO, PAGAMENTO_ATRASADO
+  severity  String @default("INFO") // INFO, WARNING, DANGER
+
+  description String
+  relatedId   String? // ID do movimento ou conta relacionada
+
+  isResolved Boolean   @default(false)
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([alertType])
+  @@index([severity])
+  @@index([isResolved])
+  @@map("financial_alerts")
 }
