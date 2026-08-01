@@ -55,6 +55,13 @@ model Company {
   calendarEvents  CalendarEvent[]
   storageFiles    StorageFile[]
   bankTransactions BankTransaction[]
+  aiConversations AIConversation[]
+  aiPrompts       AIPredefinedPrompt[]
+  aiInsights      AIInsight[]
+  aiPredictions   AIPrediction[]
+  aiDocuments     AIGeneratedDocument[]
+  aiProviderConfig AIProviderConfig?
+  aiUsageLogs     AIUsageLog[]
 
   @@index([plan])
   @@index([status])
@@ -761,7 +768,7 @@ model QuoteVersion {
   @@map("quote_versions")
 }
 
-// ═════════════════════════════════════════════════════════��═════
+// ════════════���════════════════════════════════════════════��═════
 // ORDENS DE SERVIÇO
 // ══════════════════════════════════════════════════════════════���
 
@@ -915,9 +922,9 @@ model Transaction {
   @@map("transactions")
 }
 
-// ══════════════════════════════════���════════════════════════════
+// ═══════════��══════════════════════���════════════════════════════
 // AUDITORIA
-// ═══════════���═══════════���══���════════════════════════════════════
+// ═══════════�����══════════���══���════════════════════════════════════
 
 model AuditLog {
   id              String   @id @default(cuid())
@@ -2272,4 +2279,271 @@ model BankTransaction {
   @@index([companyId])
   @@index([transactionDate])
   @@map("bank_transactions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTELIGÊNCIA ARTIFICIAL - MÓDULO AI
+// ═══════════════════════════════════════════════════════════════
+
+enum AIProvider {
+  OPENAI
+  AZURE_OPENAI
+  ANTHROPIC
+  GOOGLE_GEMINI
+  OLLAMA
+}
+
+enum AIConversationStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+model AIConversation {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String
+  
+  // Metadados
+  title           String
+  description     String?
+  category        String? @default("general") // general, analysis, documents, predictions
+  
+  // Controle
+  status          AIConversationStatus @default(ACTIVE)
+  isPinned        Boolean  @default(false)
+  
+  // Dados
+  tokenCount      Int      @default(0)
+  messageCount    Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messages        AIMessage[]
+  
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id              String   @id @default(cuid())
+  conversationId  String
+  
+  // Conteúdo
+  role            String   // user, assistant
+  content         String   // @db.Text
+  
+  // Metadados
+  tokens          Int?
+  model           String?
+  responseTime    Int?     // ms
+  
+  // Análises
+  keywords        String?  // JSON array
+  intent          String?  // classified intent
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([role])
+  @@map("ai_messages")
+}
+
+model AIPredefinedPrompt {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Identificação
+  name            String
+  description     String?
+  category        String   // analytics, documents, recommendations, search
+  
+  // Conteúdo
+  template        String   // @db.Text
+  variables       String?  // JSON array de variáveis
+  
+  // Controle
+  isFavorite      Boolean  @default(false)
+  usageCount      Int      @default(0)
+  isShared        Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([category])
+  @@map("ai_predefined_prompts")
+}
+
+model AIInsight {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Identificação
+  type            String   // growth, warning, opportunity, anomaly
+  category        String   // sales, financial, operational, customer
+  
+  // Conteúdo
+  title           String
+  description     String
+  recommendation  String?
+  
+  // Dados
+  metric          String?  // métrica associada
+  previousValue   Decimal?
+  currentValue    Decimal?
+  changePercent   Decimal?
+  
+  // Controle
+  severity        String   @default("info") // info, warning, critical
+  isRead          Boolean  @default(false)
+  isFavorite      Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([type])
+  @@index([severity])
+  @@map("ai_insights")
+}
+
+model AIPrediction {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Tipo de previsão
+  type            String   // revenue, cash_flow, expenses, receivables, demand
+  period          String   // monthly, quarterly, yearly
+  
+  // Dados
+  predictedValue  Decimal
+  confidence      Decimal  @default(0.85) // 0-1
+  rangeMin        Decimal?
+  rangeMax        Decimal?
+  
+  // Base histórica
+  historicalPoints String? // JSON com pontos históricos
+  
+  // Datas
+  fromDate        DateTime
+  toDate          DateTime
+  generatedAt     DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([type])
+  @@map("ai_predictions")
+}
+
+model AIGeneratedDocument {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Tipo
+  docType         String   // email, proposal, contract, reminder, report
+  
+  // Conteúdo
+  title           String
+  content         String   // @db.Text
+  
+  // Metadados
+  status          String   @default("draft") // draft, reviewed, sent, archived
+  generatedAt     DateTime @default(now())
+  sentAt          DateTime?
+  
+  // Relacionamentos
+  relatedEntity   String?  // cliente, obra, fornecedor, etc
+  relatedId       String?  // ID da entidade
+  
+  // Controle
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([docType])
+  @@index([status])
+  @@map("ai_generated_documents")
+}
+
+model AIProviderConfig {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  
+  // Provedor
+  provider        AIProvider
+  
+  // Credenciais (criptografadas)
+  apiKey          String?
+  apiEndpoint     String?
+  modelId         String?
+  
+  // Configurações
+  temperature     Decimal  @default(0.7)
+  maxTokens       Int      @default(2048)
+  topP            Decimal  @default(0.9)
+  
+  // Controle
+  isActive        Boolean  @default(true)
+  lastTestedAt    DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_provider_config")
+}
+
+model AIUsageLog {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String?
+  
+  // Uso
+  provider        AIProvider
+  model           String?
+  endpoint        String?
+  
+  // Consumo
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  totalTokens     Int      @default(0)
+  estimatedCost   Decimal  @default(0)
+  
+  // Resultado
+  status          String   @default("success") // success, error, timeout
+  errorMessage    String?
+  duration        Int?     // ms
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([createdAt])
+  @@map("ai_usage_logs")
 }
