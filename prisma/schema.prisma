@@ -76,6 +76,9 @@ model Company {
   purchaseRequests PurchaseRequest[]
   commercialTasks CommercialTask[]
   leads           Lead[]
+  installationEvents InstallationEvent[]
+  clientChats     ClientChat[]
+  clientFeedback  ClientFeedback[]
 
   @@index([plan])
   @@index([status])
@@ -701,7 +704,7 @@ model WorkAttachment {
   @@map("work_attachments")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════���═══════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
 // ════════════════════════════════════════════���═══════════��══════
 // ORÇAMENTOS / COTAÇÕES
@@ -3095,4 +3098,204 @@ model CommercialTask {
   @@index([leadId])
   @@index([dueDate])
   @@map("commercial_tasks")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 41 - APROVAÇÃO DE ORÇAMENTOS PELO CLIENTE
+// ═══════════════════════════════════════════════════════════════
+
+model BudgetApprovalToken {
+  id              String   @id @default(cuid())
+  budgetId        String   @unique
+  token           String   @unique @db.VarChar(255)
+  
+  expiresAt       DateTime
+  approvedAt      DateTime?
+  
+  approverIp      String?
+  approverUserAgent String?
+  approverOs      String?
+  
+  requestChangesAt DateTime?
+  requestChangesReason String?
+  
+  isApproved      Boolean  @default(false)
+  isExpired       Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([token])
+  @@index([budgetId])
+  @@index([expiresAt])
+  @@map("budget_approval_tokens")
+}
+
+model BudgetApprovalHistory {
+  id              String   @id @default(cuid())
+  budgetId        String
+  
+  action          String   // APPROVED, REQUEST_CHANGES, EXPIRED
+  
+  clientName      String?
+  clientEmail     String?
+  
+  ipAddress       String?
+  userAgent       String?
+  operatingSystem String?
+  
+  timestamp       DateTime @default(now())
+  
+  details         String?  // JSON
+  
+  @@index([budgetId])
+  @@index([timestamp])
+  @@map("budget_approval_history")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 42 - AGENDA INTELIGENTE DE INSTALAÇÕES
+// ═══════════════════════════════════════════════════════════════
+
+enum InstallationEventStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_TRANSIT
+  EXECUTING
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum InstallationEventType {
+  MEASUREMENT
+  FABRICATION
+  INSTALLATION
+  REVIEW
+  MAINTENANCE
+  DELIVERY
+}
+
+model InstallationEvent {
+  id              String   @id @default(cuid())
+  companyId       String
+  workId          String?
+  clientId        String?
+  
+  title           String
+  eventType       InstallationEventType
+  status          InstallationEventStatus @default(SCHEDULED)
+  
+  address         String?
+  latitude        Decimal?
+  longitude       Decimal?
+  
+  startTime       DateTime
+  endTime         DateTime
+  
+  teamMembers     String?  // JSON array de IDs
+  vehicleId       String?
+  priority        Int      @default(5)
+  
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([workId])
+  @@index([startTime])
+  @@index([status])
+  @@map("installation_events")
+}
+
+model InstallationEventNotification {
+  id              String   @id @default(cuid())
+  eventId         String
+  
+  userId          String
+  notificationType String // "24_HOURS", "2_HOURS", "30_MINUTES"
+  
+  sentAt          DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([eventId])
+  @@index([userId])
+  @@map("installation_event_notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 43 - PORTAL DO CLIENTE
+// ═══════════════════════════════════════════════════════════════
+
+model ClientPortalUser {
+  id              String   @id @default(cuid())
+  clientId        String   @unique
+  email           String   @unique
+  
+  passwordHash    String
+  
+  lastLoginAt     DateTime?
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([clientId])
+  @@map("client_portal_users")
+}
+
+model ClientChat {
+  id              String   @id @default(cuid())
+  companyId       String
+  clientId        String
+  
+  title           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@map("client_chats")
+}
+
+model ClientChatMessage {
+  id              String   @id @default(cuid())
+  chatId          String
+  
+  senderId        String
+  senderName      String?
+  senderType      String   // "client", "staff"
+  
+  message         String
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([chatId])
+  @@index([createdAt])
+  @@map("client_chat_messages")
+}
+
+model ClientFeedback {
+  id              String   @id @default(cuid())
+  companyId       String
+  clientId        String
+  workId          String
+  
+  rating          Int      // 1-5
+  comment         String?
+  nps             Int?     // Net Promoter Score
+  
+  submittedAt     DateTime @default(now())
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@map("client_feedback")
 }
