@@ -18,67 +18,68 @@ datasource db {
 
 // Empresa (Tenant)
 model Company {
-  id              String   @id @default(cuid())
-  name            String
-  cnpj            String?  @unique
-  phone           String?
-  email           String?
-  logo            String?
-  website         String?
-  timezone        String   @default("America/Sao_Paulo")
-  plan            Plan     @default(FREE)
-  status          CompanyStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id        String        @id @default(cuid())
+  name      String
+  cnpj      String?       @unique
+  phone     String?
+  email     String?
+  logo      String?
+  website   String?
+  timezone  String        @default("America/Sao_Paulo")
+  plan      Plan          @default(FREE)
+  status    CompanyStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
 
   // Relações
-  members         CompanyMember[]
-  roles           Role[]
-  permissions     Permission[]
-  employees       Employee[]
-  clients         Client[]
-  suppliers       Supplier[]
-  projects        Project[]
-  quotes          Quote[]
-  transactions    Transaction[]
-  postSales       PostSale[]
-  reportSchedules     ReportSchedule[]
-  dashboardLayouts    DashboardLayout[]
-  reportTemplates     ReportTemplate[]
-  reportExports       ReportExport[]
-  integrations    Integration[]
-  webhooks        Webhook[]
-  apiTokens       ApiToken[]
-  whatsappMessages WhatsAppMessage[]
-  emailMessages   EmailMessage[]
-  calendarEvents  CalendarEvent[]
-  storageFiles    StorageFile[]
-  bankTransactions BankTransaction[]
-  aiConversations AIConversation[]
-  aiPrompts       AIPredefinedPrompt[]
-  aiInsights      AIInsight[]
-  aiPredictions   AIPrediction[]
-  aiDocuments     AIGeneratedDocument[]
-  aiProviderConfig AIProviderConfig?
-  aiUsageLogs     AIUsageLog[]
-  auditLogs       AuditLog[]
-  auditRetentionPolicy AuditRetentionPolicy?
-  backupConfig    BackupConfiguration?
-  backups         Backup[]
-  backupLogs      BackupLog[]
-  notifications   Notification[]
-  warranties      Warranty[]
-  supportTickets  SupportTicket[]
-  productionOrders ProductionOrder[]
-  products        Product[]
-  inventoryMovements InventoryMovement[]
-  purchaseRequests PurchaseRequest[]
-  commercialTasks CommercialTask[]
-  leads           Lead[]
-  installationEvents InstallationEvent[]
-  clientChats     ClientChat[]
-  clientFeedback  ClientFeedback[]
+  roles                  Role[]
+  permissions            Permission[]
+  employees              Employee[]
+  clients                Client[]
+  suppliers              Supplier[]
+  projects               Project[]
+  quotes                 Quote[]
+  postSales              PostSale[]
+  reportSchedules        ReportSchedule[]
+  dashboardLayouts       DashboardLayout[]
+  reportTemplates        ReportTemplate[]
+  reportExports          ReportExport[]
+  integrations           Integration[]
+  webhooks               Webhook[]
+  apiTokens              ApiToken[]
+  whatsappMessages       WhatsAppMessage[]
+  emailMessages          EmailMessage[]
+  calendarEvents         CalendarEvent[]
+  storageFiles           StorageFile[]
+  bankTransactions       BankTransaction[]
+  aiConversations        AIConversation[]
+  aiPrompts              AIPredefinedPrompt[]
+  aiInsights             AIInsight[]
+  aiPredictions          AIPrediction[]
+  aiDocuments            AIGeneratedDocument[]
+  aiProviderConfig       AIProviderConfig?     @relation(fields: [aIProviderConfigId], references: [id])
+  aiUsageLogs            AIUsageLog[]
+  auditLogs              AuditLog[]
+  auditRetentionPolicy   AuditRetentionPolicy? @relation(fields: [auditRetentionPolicyId], references: [id])
+  backupConfig           BackupConfiguration?  @relation(fields: [backupConfigurationId], references: [id])
+  backups                Backup[]
+  backupLogs             BackupLog[]
+  notifications          Notification[]
+  warranties             Warranty[]
+  supportTickets         SupportTicket[]
+  productionOrders       ProductionOrder[]
+  products               Product[]
+  inventoryMovements     InventoryMovement[]
+  purchaseRequests       PurchaseRequest[]
+  commercialTasks        CommercialTask[]
+  leads                  Lead[]
+  installationEvents     InstallationEvent[]
+  clientChats            ClientChat[]
+  clientFeedback         ClientFeedback[]
+  aIProviderConfigId     String?
+  auditRetentionPolicyId String?
+  backupConfigurationId  String?
 
   @@index([plan])
   @@index([status])
@@ -86,18 +87,17 @@ model Company {
 
 // Papéis RBAC
 model Role {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  description     String?
-  isDefault       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  members         CompanyMember[]
-  permissions     RolePermission[]
+  permissions RolePermission[]
+  company     Company          @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, name])
   @@index([companyId])
@@ -106,17 +106,17 @@ model Role {
 
 // Permissões
 model Permission {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  description     String?
-  resource        String   // ex: clients, projects, financeiro
-  action          String   // ex: create, read, update, delete
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  resource    String // ex: clients, projects, financeiro
+  action      String // ex: create, read, update, delete
+  createdAt   DateTime @default(now())
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  roles           RolePermission[]
+  roles   RolePermission[]
+  company Company          @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, resource, action])
   @@index([companyId])
@@ -125,13 +125,13 @@ model Permission {
 
 // Junction para Role x Permission
 model RolePermission {
-  id              String   @id @default(cuid())
-  roleId          String
-  permissionId    String
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
 
   // Relações
-  role            Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission      Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
@@ -142,30 +142,29 @@ model RolePermission {
 // ═══════════════════════════════════════════════════════════════
 
 model Employee {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  email           String?
-  phone           String?
-  role            EmployeeRole @default(OTHER)
-  commissionRate  Decimal  @db.Decimal(5, 2) @default(0)
-  status          EmployeeStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id             String         @id @default(cuid())
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  role           EmployeeRole   @default(OTHER)
+  commissionRate Decimal        @default(0) @db.Decimal(5, 2)
+  status         EmployeeStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  quotes          Quote[]
-  transactions    Transaction[]
-  leadsResponsible Lead[]
+  quotes                   Quote[]
+  leadsResponsible         Lead[]
   opportunitiesResponsible Opportunity[]
-  activities      Activity[]
-  reminders       Reminder[]
-  responsibleStages WorkStage[]
-  responsibleTasks WorkTask[]
-  workTeams       WorkTeam[]
-  salesGoals      SalesGoal[]
+  activities               Activity[]
+  reminders                Reminder[]
+  responsibleStages        WorkStage[]
+  responsibleTasks         WorkTask[]
+  workTeams                WorkTeam[]
+  salesGoals               SalesGoal[]
+  company                  Company       @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([status])
@@ -179,28 +178,28 @@ model Employee {
 // ═══════════════════════════════════════════════════════════════
 
 model Client {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  type            ClientType @default(PERSON)
-  documentType    DocumentType @default(CPF)
-  document        String?
-  email           String?
-  phone           String?
-  status          ClientStatus @default(ACTIVE)
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id           String       @id @default(cuid())
+  companyId    String
+  name         String
+  type         ClientType   @default(PERSON)
+  documentType DocumentType @default(CPF)
+  document     String?
+  email        String?
+  phone        String?
+  status       ClientStatus @default(ACTIVE)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contacts        ClientContact[]
-  addresses       ClientAddress[]
-  quotes          Quote[]
-  projects        Project[]
-  transactions    Transaction[]
-  opportunities   Opportunity[]
+  contacts      ClientContact[]
+  addresses     ClientAddress[]
+  quotes        Quote[]
+  projects      Project[]
+  opportunities Opportunity[]
+  company       Company         @relation(fields: [companyId], references: [id])
+  postSales     PostSale[]
 
   @@index([companyId])
   @@index([document])
@@ -210,39 +209,39 @@ model Client {
 }
 
 model ClientContact {
-  id              String   @id @default(cuid())
-  clientId        String
-  name            String
-  email           String?
-  phone           String?
-  role            String?
-  isPrimary       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String   @id @default(cuid())
+  clientId  String
+  name      String
+  email     String?
+  phone     String?
+  role      String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relações
-  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@map("client_contacts")
 }
 
 model ClientAddress {
-  id              String   @id @default(cuid())
-  clientId        String
-  street          String
-  number          String?
-  complement      String?
-  neighborhood    String
-  city            String
-  state           String
-  zipCode         String?
-  isPrimary       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String   @id @default(cuid())
+  clientId     String
+  street       String
+  number       String?
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String?
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relações
-  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@map("client_addresses")
@@ -253,26 +252,25 @@ model ClientAddress {
 // ═══════════════════════��════════════════════════════════��══════
 
 model Supplier {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  type            SupplierType @default(MATERIAL)
-  documentType    DocumentType @default(CNPJ)
-  document        String?
-  email           String?
-  phone           String?
-  status          SupplierStatus @default(ACTIVE)
-  notes           String?
-  paymentTerms    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id           String         @id @default(cuid())
+  companyId    String
+  name         String
+  type         SupplierType   @default(MATERIAL)
+  documentType DocumentType   @default(CNPJ)
+  document     String?
+  email        String?
+  phone        String?
+  status       SupplierStatus @default(ACTIVE)
+  notes        String?
+  paymentTerms String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contacts        SupplierContact[]
-  documents       SupplierDocument[]
-  transactions    Transaction[]
+  contacts  SupplierContact[]
+  documents SupplierDocument[]
+  company   Company            @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([document])
@@ -282,42 +280,41 @@ model Supplier {
 }
 
 model SupplierContact {
-  id              String   @id @default(cuid())
-  supplierId      String
-  name            String
-  email           String?
-  phone           String?
-  role            String?
-  isPrimary       Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  id         String   @id @default(cuid())
+  supplierId String
+  name       String
+  email      String?
+  phone      String?
+  role       String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
   // Relações
-  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
   @@map("supplier_contacts")
 }
 
 model SupplierDocument {
-  id              String   @id @default(cuid())
-  companyId       String
-  supplierId      String
-  type            DocumentFileType @default(OTHER)
-  fileName        String
-  fileSize        Int      // bytes
-  mimeType        String?
-  version         Int      @default(1)
-  isLatest        Boolean  @default(true)
-  description     String?
-  tags            String?  // JSON array
-  uploadedBy      String
-  uploadedAt      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id          String           @id @default(cuid())
+  companyId   String
+  supplierId  String
+  type        DocumentFileType @default(OTHER)
+  fileName    String
+  fileSize    Int // bytes
+  mimeType    String?
+  version     Int              @default(1)
+  isLatest    Boolean          @default(true)
+  description String?
+  tags        String? // JSON array
+  uploadedBy  String
+  uploadedAt  DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
 
   // Relações
-  company         Company @relation("SupplierDocumentCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([supplierId])
@@ -330,41 +327,40 @@ model SupplierDocument {
 // ═══════════════════════════════════════════════════════════════
 
 model Project {
-  id              String   @id @default(cuid())
-  companyId       String
-  clientId        String
-  name            String
-  description     String?
-  address         String
-  status          ProjectStatus @default(PLANNING)
-  startDate       DateTime?
-  endDate         DateTime?
-  totalValue      Decimal? @db.Decimal(12, 2)
-  costEstimated   Decimal? @db.Decimal(12, 2)
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id            String        @id @default(cuid())
+  companyId     String
+  clientId      String
+  name          String
+  description   String?
+  address       String
+  status        ProjectStatus @default(PLANNING)
+  startDate     DateTime?
+  endDate       DateTime?
+  totalValue    Decimal?      @db.Decimal(12, 2)
+  costEstimated Decimal?      @db.Decimal(12, 2)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  client          Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  photos          ProjectPhoto[]
-  documents       ProjectDocument[]
-  costs           ProjectCost[]
-  serviceOrders   ServiceOrder[]
-  quotes          Quote[]
-  transactions    Transaction[]
-  stages          WorkStage[]
-  tasks           WorkTask[] @relation("WorkTasks")
-  checklists      TaskChecklist[] @relation("TaskChecklists")
-  measurements    WorkMeasurement[] @relation("WorkMeasurements")
-  team            WorkTeam[] @relation("WorkTeam")
-  occurrences     WorkOccurrence[] @relation("WorkOccurrences")
-  diaries         WorkDiary[] @relation("WorkDiary")
-  comments        WorkComment[] @relation("WorkComments")
-  attachments     WorkAttachment[] @relation("WorkAttachments")
-  postSale        PostSale?
+  client        Client            @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  photos        ProjectPhoto[]
+  documents     ProjectDocument[]
+  costs         ProjectCost[]
+  serviceOrders ServiceOrder[]
+  quotes        Quote[]
+  stages        WorkStage[]
+  tasks         WorkTask[]        @relation("WorkTasks")
+  checklists    TaskChecklist[]   @relation("TaskChecklists")
+  measurements  WorkMeasurement[] @relation("WorkMeasurements")
+  team          WorkTeam[]        @relation("WorkTeam")
+  occurrences   WorkOccurrence[]  @relation("WorkOccurrences")
+  diaries       WorkDiary[]       @relation("WorkDiary")
+  comments      WorkComment[]     @relation("WorkComments")
+  attachments   WorkAttachment[]  @relation("WorkAttachments")
+  postSale      PostSale?
+  company       Company           @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([clientId])
@@ -374,22 +370,21 @@ model Project {
 }
 
 model ProjectPhoto {
-  id              String   @id @default(cuid())
-  companyId       String
-  projectId       String
-  fileName        String
-  fileSize        Int      // bytes
-  mimeType        String?  // image/jpeg, etc
-  caption         String?
-  orderIndex      Int      @default(0)
-  uploadedBy      String
-  uploadedAt      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id         String    @id @default(cuid())
+  companyId  String
+  projectId  String
+  fileName   String
+  fileSize   Int // bytes
+  mimeType   String? // image/jpeg, etc
+  caption    String?
+  orderIndex Int       @default(0)
+  uploadedBy String
+  uploadedAt DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 
   // Relações
-  company         Company @relation("ProjectPhotoCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([projectId])
@@ -398,26 +393,25 @@ model ProjectPhoto {
 }
 
 model ProjectDocument {
-  id              String   @id @default(cuid())
-  companyId       String
-  projectId       String
-  type            DocumentFileType @default(OTHER)
-  fileName        String
-  fileSize        Int      // bytes
-  mimeType        String?
-  version         Int      @default(1)
-  isLatest        Boolean  @default(true)
-  description     String?
-  tags            String?  // JSON array
-  uploadedBy      String
-  uploadedAt      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id          String           @id @default(cuid())
+  companyId   String
+  projectId   String
+  type        DocumentFileType @default(OTHER)
+  fileName    String
+  fileSize    Int // bytes
+  mimeType    String?
+  version     Int              @default(1)
+  isLatest    Boolean          @default(true)
+  description String?
+  tags        String? // JSON array
+  uploadedBy  String
+  uploadedAt  DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
 
   // Relações
-  company         Company @relation("ProjectDocumentCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions        DocumentVersion[]
+  project  Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions DocumentVersion[]
 
   @@unique([projectId, fileName, version])
   @@index([companyId])
@@ -428,18 +422,18 @@ model ProjectDocument {
 
 // Versionamento de arquivos
 model DocumentVersion {
-  id              String   @id @default(cuid())
-  documentId      String
-  version         Int
-  url             String
-  fileName        String
-  fileSize        Int      // bytes
-  uploadedBy      String
-  uploadedAt      DateTime @default(now())
-  description     String?  // O que mudou nesta versão
+  id          String   @id @default(cuid())
+  documentId  String
+  version     Int
+  url         String
+  fileName    String
+  fileSize    Int // bytes
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  description String? // O que mudou nesta versão
 
   // Relações
-  document        ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, version])
   @@index([documentId])
@@ -447,15 +441,15 @@ model DocumentVersion {
 }
 
 model ProjectCost {
-  id              String   @id @default(cuid())
-  projectId       String
-  description     String
-  amount          Decimal  @db.Decimal(12, 2)
-  category        String?
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  projectId   String
+  description String
+  amount      Decimal  @db.Decimal(12, 2)
+  category    String?
+  createdAt   DateTime @default(now())
 
   // Relações
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@map("project_costs")
@@ -463,29 +457,28 @@ model ProjectCost {
 
 // ═══════════════════════════════════════════════════════════════
 // GESTÃO DE OBRAS — ETAPAS, TAREFAS, CHECKLISTS
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════��════════════════════════
 
 model WorkStage {
-  id              String   @id @default(cuid())
-  projectId       String
-  companyId       String
-  name            String
-  position        Int      @default(0)
-  status          WorkStageStatus @default(PENDING)
+  id               String          @id @default(cuid())
+  projectId        String
+  companyId        String
+  name             String
+  position         Int             @default(0)
+  status           WorkStageStatus @default(PENDING)
   plannedStartDate DateTime?
   plannedEndDate   DateTime?
   actualStartDate  DateTime?
   actualEndDate    DateTime?
-  responsibleId   String?
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  responsibleId    String?
+  description      String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // Relações
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkStageCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  responsible     Employee? @relation(fields: [responsibleId], references: [id], onSetNull)
-  tasks           WorkTask[]
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible Employee?  @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  tasks       WorkTask[]
 
   @@unique([projectId, position])
   @@index([projectId])
@@ -495,31 +488,30 @@ model WorkStage {
 }
 
 model WorkTask {
-  id              String   @id @default(cuid())
-  projectId       String
-  stageId         String
-  companyId       String
-  title           String
-  description     String?
-  status          WorkTaskStatus @default(TODO)
-  priority        TaskPriority @default(NORMAL)
-  responsibleId   String?
-  dueDate         DateTime?
-  startDate       DateTime?
-  completedDate   DateTime?
-  estimatedHours  Int?
-  actualHours     Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String         @id @default(cuid())
+  projectId      String
+  stageId        String
+  companyId      String
+  title          String
+  description    String?
+  status         WorkTaskStatus @default(TODO)
+  priority       TaskPriority   @default(NORMAL)
+  responsibleId  String?
+  dueDate        DateTime?
+  startDate      DateTime?
+  completedDate  DateTime?
+  estimatedHours Int?
+  actualHours    Int?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   // Relações
-  project         Project @relation("WorkTasks", fields: [projectId], references: [id], onDelete: Cascade)
-  stage           WorkStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkTaskCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  responsible     Employee? @relation(fields: [responsibleId], references: [id], onSetNull)
-  checklists      TaskChecklist[]
-  comments        WorkComment[]
-  attachments     WorkAttachment[]
+  project     Project          @relation("WorkTasks", fields: [projectId], references: [id], onDelete: Cascade)
+  stage       WorkStage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  responsible Employee?        @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  checklists  TaskChecklist[]
+  comments    WorkComment[]
+  attachments WorkAttachment[]
 
   @@index([projectId])
   @@index([stageId])
@@ -530,22 +522,21 @@ model WorkTask {
 }
 
 model TaskChecklist {
-  id              String   @id @default(cuid())
-  taskId          String
-  projectId       String
-  companyId       String
-  title           String
-  isCompleted     Boolean  @default(false)
-  completedBy     String?
-  completedAt     DateTime?
-  order           Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String    @id @default(cuid())
+  taskId      String
+  projectId   String
+  companyId   String
+  title       String
+  isCompleted Boolean   @default(false)
+  completedBy String?
+  completedAt DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relações
-  task            WorkTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  project         Project @relation("TaskChecklists", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("TaskChecklistCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  task    WorkTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  project Project  @relation("TaskChecklists", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([projectId])
@@ -554,25 +545,24 @@ model TaskChecklist {
 }
 
 model WorkMeasurement {
-  id              String   @id @default(cuid())
-  projectId       String
-  companyId       String
-  environment     String?  // Cômodo, local
-  height          Decimal? @db.Decimal(8, 2)
-  width           Decimal? @db.Decimal(8, 2)
-  depth           Decimal? @db.Decimal(8, 2)
-  quantity        Int      @default(1)
-  unit            String?  // m², m, px
-  notes           String?
-  photoUrl        String?
-  sketchUrl       String?
-  recordedBy      String
-  recordedAt      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(cuid())
+  projectId   String
+  companyId   String
+  environment String? // Cômodo, local
+  height      Decimal? @db.Decimal(8, 2)
+  width       Decimal? @db.Decimal(8, 2)
+  depth       Decimal? @db.Decimal(8, 2)
+  quantity    Int      @default(1)
+  unit        String? // m², m, px
+  notes       String?
+  photoUrl    String?
+  sketchUrl   String?
+  recordedBy  String
+  recordedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relações
-  project         Project @relation("WorkMeasurements", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkMeasurementCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  project Project @relation("WorkMeasurements", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([companyId])
@@ -580,23 +570,22 @@ model WorkMeasurement {
 }
 
 model WorkTeam {
-  id              String   @id @default(cuid())
-  projectId       String
-  employeeId      String
-  companyId       String
-  role            String?  // Chefe de Obra, Vidraceiro, etc.
-  status          TeamMemberStatus @default(ASSIGNED)
-  startDate       DateTime @default(now())
-  endDate         DateTime?
-  workedHours     Int      @default(0)
-  addedBy         String
-  addedAt         DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String           @id @default(cuid())
+  projectId   String
+  employeeId  String
+  companyId   String
+  role        String? // Chefe de Obra, Vidraceiro, etc.
+  status      TeamMemberStatus @default(ASSIGNED)
+  startDate   DateTime         @default(now())
+  endDate     DateTime?
+  workedHours Int              @default(0)
+  addedBy     String
+  addedAt     DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   // Relações
-  project         Project @relation("WorkTeam", fields: [projectId], references: [id], onDelete: Cascade)
-  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  company         Company @relation("WorkTeamCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  project  Project  @relation("WorkTeam", fields: [projectId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
 
   @@unique([projectId, employeeId])
   @@index([projectId])
@@ -606,24 +595,23 @@ model WorkTeam {
 }
 
 model WorkOccurrence {
-  id              String   @id @default(cuid())
-  projectId       String
-  companyId       String
-  type            OccurrenceType @default(OTHER)
-  title           String
-  description     String?
-  priority        OccurrencePriority @default(NORMAL)
-  status          OccurrenceStatus @default(OPEN)
-  reportedBy      String
-  reportedAt      DateTime @default(now())
-  resolvedBy      String?
-  resolvedAt      DateTime?
-  photoUrl        String?
-  updatedAt       DateTime @updatedAt
+  id          String             @id @default(cuid())
+  projectId   String
+  companyId   String
+  type        OccurrenceType     @default(OTHER)
+  title       String
+  description String?
+  priority    OccurrencePriority @default(NORMAL)
+  status      OccurrenceStatus   @default(OPEN)
+  reportedBy  String
+  reportedAt  DateTime           @default(now())
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  photoUrl    String?
+  updatedAt   DateTime           @updatedAt
 
   // Relações
-  project         Project @relation("WorkOccurrences", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkOccurrenceCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  project Project @relation("WorkOccurrences", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([companyId])
@@ -633,24 +621,23 @@ model WorkOccurrence {
 }
 
 model WorkDiary {
-  id              String   @id @default(cuid())
-  projectId       String
-  companyId       String
-  date            DateTime @default(now())
-  author          String
-  description     String
-  weather         String?  // Ensolarado, Chuvoso, etc.
-  weather_temp    Int?     // Temperatura em Celsius
-  teamPresent     String?  // JSON array de IDs
-  materialsUsed   String?  // JSON array
-  photoUrl        String?
-  videoUrl        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  projectId     String
+  companyId     String
+  date          DateTime @default(now())
+  author        String
+  description   String
+  weather       String? // Ensolarado, Chuvoso, etc.
+  weather_temp  Int? // Temperatura em Celsius
+  teamPresent   String? // JSON array de IDs
+  materialsUsed String? // JSON array
+  photoUrl      String?
+  videoUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relações
-  project         Project @relation("WorkDiary", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkDiaryCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  project Project @relation("WorkDiary", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([companyId])
@@ -659,20 +646,19 @@ model WorkDiary {
 }
 
 model WorkComment {
-  id              String   @id @default(cuid())
-  taskId          String?
-  projectId       String
-  companyId       String
-  author          String
-  content         String
-  mentions        String?  // JSON array de user IDs
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String   @id @default(cuid())
+  taskId    String?
+  projectId String
+  companyId String
+  author    String
+  content   String
+  mentions  String? // JSON array de user IDs
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relações
-  task            WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  project         Project @relation("WorkComments", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkCommentCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  task    WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project Project   @relation("WorkComments", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([projectId])
@@ -681,22 +667,21 @@ model WorkComment {
 }
 
 model WorkAttachment {
-  id              String   @id @default(cuid())
-  taskId          String?
-  projectId       String
-  companyId       String
-  fileName        String
-  fileSize        Int
-  mimeType        String?
-  fileUrl         String
-  uploadedBy      String
-  uploadedAt      DateTime @default(now())
-  description     String?
+  id          String   @id @default(cuid())
+  taskId      String?
+  projectId   String
+  companyId   String
+  fileName    String
+  fileSize    Int
+  mimeType    String?
+  fileUrl     String
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  description String?
 
   // Relações
-  task            WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  project         Project @relation("WorkAttachments", fields: [projectId], references: [id], onDelete: Cascade)
-  company         Company @relation("WorkAttachmentCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  task    WorkTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  project Project   @relation("WorkAttachments", fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([projectId])
@@ -711,31 +696,31 @@ model WorkAttachment {
 // ════════════════���══════════════��═══════��══════════��════════════
 
 model Quote {
-  id              String   @id @default(cuid())
-  companyId       String
-  clientId        String
-  projectId       String?
-  salespersonId   String?
-  number          String
-  status          QuoteStatus @default(DRAFT)
-  totalValue      Decimal  @db.Decimal(12, 2)
-  commissionRateApplied Decimal? @db.Decimal(5, 2)
-  validUntil      DateTime?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  sentAt          DateTime?
-  approvedAt      DateTime?
-  rejectedAt      DateTime?
-  deletedAt       DateTime?
+  id                    String      @id @default(cuid())
+  companyId             String
+  clientId              String
+  projectId             String?
+  salespersonId         String?
+  number                String
+  status                QuoteStatus @default(DRAFT)
+  totalValue            Decimal     @db.Decimal(12, 2)
+  commissionRateApplied Decimal?    @db.Decimal(5, 2)
+  validUntil            DateTime?
+  notes                 String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  sentAt                DateTime?
+  approvedAt            DateTime?
+  rejectedAt            DateTime?
+  deletedAt             DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  client          Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  project         Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  salesperson     Employee? @relation(fields: [salespersonId], references: [id], onDelete: SetNull)
-  items           QuoteItem[]
-  versions        QuoteVersion[]
+  client      Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project     Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  salesperson Employee?      @relation(fields: [salespersonId], references: [id], onDelete: SetNull)
+  items       QuoteItem[]
+  versions    QuoteVersion[]
+  company     Company        @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -751,34 +736,34 @@ model Quote {
 }
 
 model QuoteItem {
-  id              String   @id @default(cuid())
-  quoteId         String
-  description     String
-  quantity        Decimal  @db.Decimal(10, 3)
-  unit            String   @default("un")
-  unitPrice       Decimal  @db.Decimal(12, 2)
-  totalPrice      Decimal  @db.Decimal(12, 2)
-  discount        Decimal? @db.Decimal(12, 2) @default(0)
-  order           Int
+  id          String   @id @default(cuid())
+  quoteId     String
+  description String
+  quantity    Decimal  @db.Decimal(10, 3)
+  unit        String   @default("un")
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  totalPrice  Decimal  @db.Decimal(12, 2)
+  discount    Decimal? @default(0) @db.Decimal(12, 2)
+  order       Int
 
   // Relações
-  quote           Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   @@index([quoteId])
   @@map("quote_items")
 }
 
 model QuoteVersion {
-  id              String   @id @default(cuid())
-  quoteId         String
-  versionNumber   Int
-  status          QuoteStatus
-  totalValue      Decimal  @db.Decimal(12, 2)
-  notes           String?
-  createdAt       DateTime @default(now())
+  id            String      @id @default(cuid())
+  quoteId       String
+  versionNumber Int
+  status        QuoteStatus
+  totalValue    Decimal     @db.Decimal(12, 2)
+  notes         String?
+  createdAt     DateTime    @default(now())
 
   // Relações
-  quote           Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   @@unique([quoteId, versionNumber])
   @@index([quoteId])
@@ -790,23 +775,22 @@ model QuoteVersion {
 // ══════════════════════════════════════════════════════════════���
 
 model ServiceOrder {
-  id              String   @id @default(cuid())
-  companyId       String
-  projectId       String
-  number          String
-  status          ServiceOrderStatus @default(DRAFT)
-  scheduledDate   DateTime?
-  startDate       DateTime?
-  endDate         DateTime?
-  description     String?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id            String             @id @default(cuid())
+  companyId     String
+  projectId     String
+  number        String
+  status        ServiceOrderStatus @default(DRAFT)
+  scheduledDate DateTime?
+  startDate     DateTime?
+  endDate       DateTime?
+  description   String?
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  deletedAt     DateTime?
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -817,45 +801,44 @@ model ServiceOrder {
 
 // Configurações da Empresa
 model CompanySetting {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  
+  id        String @id @default(cuid())
+  companyId String @unique
+
   // Dados da empresa
-  logo            String?  // URL ou base64
-  razaoSocial     String?
-  cnpj            String?
-  
+  logo        String? // URL ou base64
+  razaoSocial String?
+  cnpj        String?
+
   // Contato
-  email           String?
-  whatsapp        String?
-  
+  email    String?
+  whatsapp String?
+
   // Financeiro
   comissaoPercentual Float? @default(5.0)
-  impostoPercentual Float? @default(15.0)
-  
+  impostoPercentual  Float? @default(15.0)
+
   // Horários e metas
-  horarioAbertura String? @default("09:00")
+  horarioAbertura   String? @default("09:00")
   horarioFechamento String? @default("18:00")
-  metaVendas      Float?
-  metaClientes    Float?
-  
+  metaVendas        Float?
+  metaClientes      Float?
+
   // Numeração automática
-  proximoNumeroOS         Int @default(1)
-  proximoNumeroOrcamento  Int @default(1)
-  proximoNumeroNota       Int @default(1)
-  
+  proximoNumeroOS        Int @default(1)
+  proximoNumeroOrcamento Int @default(1)
+  proximoNumeroNota      Int @default(1)
+
   // Assinaturas e documentos
   assinaturaPadrao String?
   carimboNota      String?
   rodapePadrao     String?
-  
+
   // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+
   @@index([companyId])
   @@map("company_settings")
 }
@@ -866,34 +849,34 @@ model CompanySetting {
 
 // Lead (Prospect)
 model Lead {
-  id                String   @id @default(cuid())
-  companyId         String
-  name              String
-  email             String?
-  phone             String?
-  whatsapp          String?
-  cpf               String?
-  cnpj              String?
-  city              String?
-  state             String?
-  zipCode           String?
-  address           String?
-  source            LeadSource @default(OUTRO)
-  interests         String?   // JSON array: ["Box", "Portão", "Cobertura", ...]
-  estimatedValue    Float?
-  responsibleId     String?
-  status            LeadStatus @default(NEW)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastContactAt     DateTime?
-  notes             String?
+  id             String     @id @default(cuid())
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  whatsapp       String?
+  cpf            String?
+  cnpj           String?
+  city           String?
+  state          String?
+  zipCode        String?
+  address        String?
+  source         LeadSource @default(OUTRO)
+  interests      String? // JSON array: ["Box", "Portão", "Cobertura", ...]
+  estimatedValue Float?
+  responsibleId  String?
+  status         LeadStatus @default(NEW)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  lastContactAt  DateTime?
+  notes          String?
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  responsible       Employee? @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
-  opportunity       Opportunity?
-  activities        Activity[]
-  history           CRMHistory[]
+  responsible Employee?    @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  opportunity Opportunity?
+  activities  Activity[]
+  history     CRMHistory[]
+  company     Company      @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([source])
@@ -904,32 +887,31 @@ model Lead {
 
 // Opportunity (Oportunidade)
 model Opportunity {
-  id                String   @id @default(cuid())
+  id                String            @id @default(cuid())
   companyId         String
-  leadId            String   @unique
+  leadId            String            @unique
   clientId          String?
-  stage             OpportunityStage @default(NEW_LEAD)
+  stage             OpportunityStage  @default(NEW_LEAD)
   value             Float
-  probability       Int      @default(10)
+  probability       Int               @default(10)
   responsibleId     String?
   lastContactAt     DateTime?
   nextActionDate    DateTime?
   expectedCloseDate DateTime?
   status            OpportunityStatus @default(OPEN)
   lossReasonId      String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   closedAt          DateTime?
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lead              Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  client            Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  responsible       Employee? @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
-  lossReason        LossReason? @relation(fields: [lossReasonId], references: [id], onDelete: SetNull)
-  activities        Activity[]
-  files             OpportunityFile[]
-  history           CRMHistory[]
+  lead        Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  client      Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  responsible Employee?         @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
+  lossReason  LossReason?       @relation(fields: [lossReasonId], references: [id], onDelete: SetNull)
+  activities  Activity[]
+  files       OpportunityFile[]
+  history     CRMHistory[]
 
   @@index([companyId])
   @@index([stage])
@@ -940,26 +922,25 @@ model Opportunity {
 
 // Activity (Atividade)
 model Activity {
-  id                String   @id @default(cuid())
-  companyId         String
-  leadId            String?
-  opportunityId     String?
-  type              ActivityType
-  title             String
-  description       String?
-  result            String?
-  nextAction        String?
-  attachmentUrl     String?
-  createdBy         String
-  createdAt         DateTime @default(now())
-  scheduledFor      DateTime?
-  completedAt       DateTime?
+  id            String       @id @default(cuid())
+  companyId     String
+  leadId        String?
+  opportunityId String?
+  type          ActivityType
+  title         String
+  description   String?
+  result        String?
+  nextAction    String?
+  attachmentUrl String?
+  createdBy     String
+  createdAt     DateTime     @default(now())
+  scheduledFor  DateTime?
+  completedAt   DateTime?
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  opportunity       Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  creator           Employee @relation(fields: [createdBy], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  creator     Employee     @relation(fields: [createdBy], references: [id])
 
   @@index([companyId])
   @@index([type])
@@ -971,22 +952,21 @@ model Activity {
 
 // Reminder (Lembretes)
 model Reminder {
-  id                String   @id @default(cuid())
-  companyId         String
-  leadId            String?
-  opportunityId     String?
-  title             String
-  description       String?
-  dueDate           DateTime
-  priority          ReminderPriority @default(NORMAL)
-  isCompleted       Boolean  @default(false)
-  assignedTo        String
-  createdAt         DateTime @default(now())
-  completedAt       DateTime?
+  id            String           @id @default(cuid())
+  companyId     String
+  leadId        String?
+  opportunityId String?
+  title         String
+  description   String?
+  dueDate       DateTime
+  priority      ReminderPriority @default(NORMAL)
+  isCompleted   Boolean          @default(false)
+  assignedTo    String
+  createdAt     DateTime         @default(now())
+  completedAt   DateTime?
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assignee          Employee @relation(fields: [assignedTo], references: [id])
+  assignee Employee @relation(fields: [assignedTo], references: [id])
 
   @@index([companyId])
   @@index([dueDate])
@@ -996,22 +976,20 @@ model Reminder {
 
 // CRM History (Histórico de alterações)
 model CRMHistory {
-  id                String   @id @default(cuid())
-  companyId         String
-  leadId            String?
-  opportunityId     String?
-  action            String
-  description       String
-  oldValue          String?
-  newValue          String?
-  userId            String
-  createdAt         DateTime @default(now())
+  id            String   @id @default(cuid())
+  companyId     String
+  leadId        String?
+  opportunityId String?
+  action        String
+  description   String
+  oldValue      String?
+  newValue      String?
+  userId        String
+  createdAt     DateTime @default(now())
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  opportunity       Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  user              User @relation(fields: [userId], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([leadId])
@@ -1022,18 +1000,18 @@ model CRMHistory {
 
 // Files de Oportunidade
 model OpportunityFile {
-  id                String   @id @default(cuid())
-  opportunityId     String
-  fileName          String
-  fileUrl           String
-  fileSize          Int
-  mimeType          String
-  fileType          String    // "quote", "contract", "proposal", etc.
-  uploadedBy        String
-  createdAt         DateTime @default(now())
+  id            String   @id @default(cuid())
+  opportunityId String
+  fileName      String
+  fileUrl       String
+  fileSize      Int
+  mimeType      String
+  fileType      String // "quote", "contract", "proposal", etc.
+  uploadedBy    String
+  createdAt     DateTime @default(now())
 
   // Relações
-  opportunity       Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
   @@index([opportunityId])
   @@map("opportunity_files")
@@ -1041,16 +1019,15 @@ model OpportunityFile {
 
 // Loss Reason (Motivos de perda)
 model LossReason {
-  id                String   @id @default(cuid())
-  companyId         String
-  name              String
-  description       String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   // Relações
-  company           Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  opportunities     Opportunity[]
+  opportunities Opportunity[]
 
   @@unique([companyId, name])
   @@index([companyId])
@@ -1062,23 +1039,22 @@ model LossReason {
 // ═══════════════════════════════════════════════════════════════
 
 model SalesGoal {
-  id              String   @id @default(cuid())
-  companyId       String
-  employeeId      String?  // Se null, é meta de equipe
-  month           Int
-  year            Int
-  revenueTarget   Float
-  quantityTarget  Int?
-  conversionTarget Float?  // Percentual
-  status          GoalStatus @default(IN_PROGRESS)
-  achievedRevenue Float   @default(0)
-  achievedQuantity Int    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String     @id @default(cuid())
+  companyId        String
+  employeeId       String? // Se null, é meta de equipe
+  month            Int
+  year             Int
+  revenueTarget    Float
+  quantityTarget   Int?
+  conversionTarget Float? // Percentual
+  status           GoalStatus @default(IN_PROGRESS)
+  achievedRevenue  Float      @default(0)
+  achievedQuantity Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  employee        Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 
   @@unique([companyId, year, month, employeeId])
   @@index([companyId])
@@ -1088,22 +1064,21 @@ model SalesGoal {
 }
 
 model CommercialMetrics {
-  id              String   @id @default(cuid())
-  companyId       String
-  period          String   // "2024-01" (YYYY-MM)
-  leadsGenerated  Int      @default(0)
-  leadsConverted  Int      @default(0)
-  opportunitiesOpen Int    @default(0)
-  opportunitiesClosed Int  @default(0)
-  averageTicket   Float    @default(0)
-  totalRevenue    Float    @default(0)
-  conversionRate  Float    @default(0)  // Percentual
-  averageClosingTime Int   @default(0)  // Dias
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  companyId           String
+  period              String // "2024-01" (YYYY-MM)
+  leadsGenerated      Int      @default(0)
+  leadsConverted      Int      @default(0)
+  opportunitiesOpen   Int      @default(0)
+  opportunitiesClosed Int      @default(0)
+  averageTicket       Float    @default(0)
+  totalRevenue        Float    @default(0)
+  conversionRate      Float    @default(0) // Percentual
+  averageClosingTime  Int      @default(0) // Dias
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, period])
   @@index([companyId])
@@ -1111,26 +1086,26 @@ model CommercialMetrics {
 }
 
 model PostSale {
-  id              String   @id @default(cuid())
-  companyId       String
-  projectId       String
-  clientId        String
-  status          PostSaleStatus @default(IN_PROGRESS)
-  deliveryDate    DateTime?
-  warrantyMonths  Int      @default(12)
-  warrantyEndDate DateTime?
+  id                String         @id @default(cuid())
+  companyId         String
+  projectId         String
+  clientId          String
+  status            PostSaleStatus @default(IN_PROGRESS)
+  deliveryDate      DateTime?
+  warrantyMonths    Int            @default(12)
+  warrantyEndDate   DateTime?
   satisfactionScore Int?
-  issues          String?  // JSON array de problemas
-  lastContactDate DateTime?
-  nextFollowDate  DateTime?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  issues            String? // JSON array de problemas
+  lastContactDate   DateTime?
+  nextFollowDate    DateTime?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  client          Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id])
 
   @@unique([projectId])
   @@index([companyId])
@@ -1140,16 +1115,15 @@ model PostSale {
 }
 
 model LeadOrigin {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  icon            String?  // Material Icon name
-  order           Int      @default(0)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  icon      String? // Material Icon name
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, name])
   @@index([companyId])
@@ -1161,21 +1135,19 @@ model LeadOrigin {
 // ═══════════════════════════════════════════════════════════════
 
 model UserSession {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   userId          String
   companyId       String
   deviceName      String?
   browser         String?
   operatingSystem String?
   ipAddress       String?
-  lastActivityAt  DateTime @default(now()) @updatedAt
+  lastActivityAt  DateTime  @default(now()) @updatedAt
   expiresAt       DateTime?
   revokedAt       DateTime?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
   // Relações
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([companyId])
@@ -1185,16 +1157,15 @@ model UserSession {
 }
 
 model PasswordReset {
-  id              String   @id @default(cuid())
-  userId          String
-  token           String   @unique
-  expiresAt       DateTime
-  usedAt          DateTime?
-  ipAddress       String?
-  createdAt       DateTime @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  ipAddress String?
+  createdAt DateTime  @default(now())
 
   // Relações
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -1202,17 +1173,16 @@ model PasswordReset {
 }
 
 model LoginAttempt {
-  id              String   @id @default(cuid())
-  userId          String?
-  email           String
-  ipAddress       String?
-  browser         String?
-  success         Boolean  @default(false)
-  reason          String?
-  createdAt       DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  ipAddress String?
+  browser   String?
+  success   Boolean  @default(false)
+  reason    String?
+  createdAt DateTime @default(now())
 
   // Relações (userId optional para failed attempts)
-  user            User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([ipAddress])
@@ -1226,26 +1196,25 @@ model LoginAttempt {
 // ═══════════════════════════════════════════════════════════════
 
 model Notification {
-  id              String   @id @default(cuid())
-  userId          String
-  companyId       String
-  title           String
-  message         String
-  type            NotificationType @default(INFO)
-  priority        NotificationPriority @default(NORMAL)
-  category        NotificationCategory @default(SYSTEM)
-  status          NotificationStatus @default(UNREAD)
-  actionUrl       String?
-  icon            String?
-  readAt          DateTime?
-  deletedAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String               @id @default(cuid())
+  userId    String
+  companyId String
+  title     String
+  message   String
+  type      NotificationType     @default(INFO)
+  priority  NotificationPriority @default(NORMAL)
+  category  NotificationCategory @default(SISTEMA)
+  status    NotificationStatus   @default(UNREAD)
+  actionUrl String?
+  icon      String?
+  readAt    DateTime?
+  deletedAt DateTime?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
 
   // Relações
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  logs            NotificationLog[]
+  logs    NotificationLog[]
+  company Company           @relation(fields: [companyId], references: [id])
 
   @@index([userId])
   @@index([companyId])
@@ -1256,18 +1225,18 @@ model Notification {
 }
 
 model NotificationLog {
-  id              String   @id @default(cuid())
-  notificationId  String
-  channel         NotificationChannel @default(INTERNAL)
-  status          NotificationLogStatus @default(PENDING)
-  error           String?
-  sentAt          DateTime?
-  attemptNumber   Int      @default(1)
-  nextRetryAt     DateTime?
-  createdAt       DateTime @default(now())
+  id             String                @id @default(cuid())
+  notificationId String
+  channel        NotificationChannel   @default(INTERNAL)
+  status         NotificationLogStatus @default(PENDING)
+  error          String?
+  sentAt         DateTime?
+  attemptNumber  Int                   @default(1)
+  nextRetryAt    DateTime?
+  createdAt      DateTime              @default(now())
 
   // Relações
-  notification    Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@index([notificationId])
   @@index([channel])
@@ -1285,15 +1254,13 @@ model NotificationPreference {
   whatsappEnabled Boolean  @default(false)
   internalEnabled Boolean  @default(true)
   silentMode      Boolean  @default(false)
-  silentStart     String?  // HH:mm
-  silentEnd       String?  // HH:mm
+  silentStart     String? // HH:mm
+  silentEnd       String? // HH:mm
   categories      String[] @default([]) // JSON array de categorias habilitadas
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relações
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([companyId])
@@ -1301,20 +1268,19 @@ model NotificationPreference {
 }
 
 model NotificationTemplate {
-  id              String   @id @default(cuid())
-  companyId       String
-  code            String
-  name            String
-  subject         String?
-  template        String   // HTML template com {{variables}}
-  type            NotificationType @default(INFO)
-  category        NotificationCategory @default(SYSTEM)
-  enabled         Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String               @id @default(cuid())
+  companyId String
+  code      String
+  name      String
+  subject   String?
+  template  String // HTML template com {{variables}}
+  type      NotificationType     @default(INFO)
+  category  NotificationCategory @default(SISTEMA)
+  enabled   Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -1338,7 +1304,6 @@ model NotificationSettings {
   updatedAt       DateTime @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("notification_settings")
 }
@@ -1680,25 +1645,25 @@ enum ExportStatus {
 // ═══════════════════════════════════════════════════════════════
 
 model ReportSchedule {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  type            ReportType @default(FINANCIAL)
-  frequency       String   @default("MONTHLY") // DAILY, WEEKLY, MONTHLY
-  time            String   @default("09:00") // HH:mm format
-  dayOfWeek       Int?     // 0-6 (0=Sunday)
-  dayOfMonth      Int?     // 1-31
-  recipients      String   // JSON array de emails
-  format          String   @default("PDF") // PDF, EXCEL, CSV
-  filters         String?  // JSON com filtros
-  lastSent        DateTime?
-  nextScheduled   DateTime?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String     @id @default(cuid())
+  companyId     String
+  name          String
+  type          ReportType @default(FINANCIAL)
+  frequency     String     @default("MONTHLY") // DAILY, WEEKLY, MONTHLY
+  time          String     @default("09:00") // HH:mm format
+  dayOfWeek     Int? // 0-6 (0=Sunday)
+  dayOfMonth    Int? // 1-31
+  recipients    String // JSON array de emails
+  format        String     @default("PDF") // PDF, EXCEL, CSV
+  filters       String? // JSON com filtros
+  lastSent      DateTime?
+  nextScheduled DateTime?
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([isActive])
@@ -1706,18 +1671,18 @@ model ReportSchedule {
 }
 
 model DashboardLayout {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String
-  name            String   @default("Padrão")
-  widgets         String   // JSON array de widget configs
-  columnCount     Int      @default(3)
-  isDefault       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(cuid())
+  companyId   String
+  userId      String
+  name        String   @default("Padrão")
+  widgets     String // JSON array de widget configs
+  columnCount Int      @default(3)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, userId, isDefault])
   @@index([companyId])
@@ -1726,20 +1691,20 @@ model DashboardLayout {
 }
 
 model ReportTemplate {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  type            ReportType @default(FINANCIAL)
-  description     String?
-  sections        String   // JSON array de seções
-  defaultFilters  String?  // JSON com filtros padrão
-  isPublic        Boolean  @default(false)
-  usedCount       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String     @id @default(cuid())
+  companyId      String
+  name           String
+  type           ReportType @default(FINANCIAL)
+  description    String?
+  sections       String // JSON array de seções
+  defaultFilters String? // JSON com filtros padrão
+  isPublic       Boolean    @default(false)
+  usedCount      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([type])
@@ -1747,21 +1712,21 @@ model ReportTemplate {
 }
 
 model ReportExport {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String
-  type            String   // FINANCIAL, COMMERCIAL, WORKS
-  format          String   // PDF, EXCEL, CSV
-  status          ExportStatus @default(PROCESSING)
-  fileUrl         String?
-  fileSize        Int?
-  errorMessage    String?
-  generatedAt     DateTime?
-  expiresAt       DateTime?
-  createdAt       DateTime @default(now())
+  id           String       @id @default(cuid())
+  companyId    String
+  userId       String
+  type         String // FINANCIAL, COMMERCIAL, WORKS
+  format       String // PDF, EXCEL, CSV
+  status       ExportStatus @default(PROCESSING)
+  fileUrl      String?
+  fileSize     Int?
+  errorMessage String?
+  generatedAt  DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
 
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@index([userId])
@@ -1802,36 +1767,36 @@ enum IntegrationLogLevel {
 }
 
 model Integration {
-  id              String   @id @default(cuid())
-  companyId       String
-  provider        IntegrationProvider
-  name            String
-  description     String?
-  status          IntegrationStatus @default(DISCONNECTED)
-  
+  id          String              @id @default(cuid())
+  companyId   String
+  provider    IntegrationProvider
+  name        String
+  description String?
+  status      IntegrationStatus   @default(DISCONNECTED)
+
   // Credenciais (criptografadas)
-  credentials     String?  // JSON criptografado
-  
+  credentials String? // JSON criptografado
+
   // Configurações
-  config          String?  // JSON com settings customizados
-  
+  config String? // JSON com settings customizados
+
   // Sincronização
-  lastSync        DateTime?
-  lastError       String?
-  syncFrequency   String? @default("HOURLY") // MANUAL, HOURLY, DAILY, WEEKLY
-  
+  lastSync      DateTime?
+  lastError     String?
+  syncFrequency String?   @default("HOURLY") // MANUAL, HOURLY, DAILY, WEEKLY
+
   // Controle
-  isActive        Boolean  @default(false)
-  enabledAt       DateTime?
-  disabledAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isActive   Boolean   @default(false)
+  enabledAt  DateTime?
+  disabledAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  logs            IntegrationLog[]
-  webhooks        Webhook[]
-  
+  logs     IntegrationLog[]
+  webhooks Webhook[]
+  company  Company          @relation(fields: [companyId], references: [id])
+
   @@unique([companyId, provider])
   @@index([companyId])
   @@index([provider])
@@ -1840,31 +1805,31 @@ model Integration {
 }
 
 model IntegrationLog {
-  id              String   @id @default(cuid())
-  integrationId   String
-  level           IntegrationLogLevel @default(INFO)
-  
+  id            String              @id @default(cuid())
+  integrationId String
+  level         IntegrationLogLevel @default(INFO)
+
   // Request
-  endpoint        String?
-  method          String?  @default("GET")
-  requestData     String?  // JSON
-  
+  endpoint    String?
+  method      String? @default("GET")
+  requestData String? // JSON
+
   // Response
-  statusCode      Int?
-  responseData    String?  // JSON
-  errorMessage    String?
-  
+  statusCode   Int?
+  responseData String? // JSON
+  errorMessage String?
+
   // Performance
-  duration        Int?     // milliseconds
-  
+  duration Int? // milliseconds
+
   // Metadados
-  metadata        String?  // JSON livre
-  
-  createdAt       DateTime @default(now())
-  
+  metadata String? // JSON livre
+
+  createdAt DateTime @default(now())
+
   // Relações
-  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
   @@index([integrationId])
   @@index([createdAt])
   @@index([level])
@@ -1872,29 +1837,29 @@ model IntegrationLog {
 }
 
 model Webhook {
-  id              String   @id @default(cuid())
-  companyId       String
-  integrationId   String
-  
+  id            String @id @default(cuid())
+  companyId     String
+  integrationId String
+
   // URL e Eventos
-  url             String
-  events          String   // JSON array de eventos
-  secret          String?  // Token para validação
-  
+  url    String
+  events String // JSON array de eventos
+  secret String? // Token para validação
+
   // Status e Controle
-  isActive        Boolean  @default(true)
-  lastTriggered   DateTime?
-  failureCount    Int      @default(0)
-  maxRetries      Int      @default(3)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isActive      Boolean   @default(true)
+  lastTriggered DateTime?
+  failureCount  Int       @default(0)
+  maxRetries    Int       @default(3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  deliveries      WebhookDelivery[]
-  
+  integration Integration       @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+  company     Company           @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([integrationId])
   @@index([isActive])
@@ -1902,27 +1867,27 @@ model Webhook {
 }
 
 model WebhookDelivery {
-  id              String   @id @default(cuid())
-  webhookId       String
-  
+  id        String @id @default(cuid())
+  webhookId String
+
   // Evento disparado
-  event           String
-  payload         String   // JSON
-  
+  event   String
+  payload String // JSON
+
   // Resultado
-  statusCode      Int?
-  responseBody    String?
-  success         Boolean  @default(false)
-  
+  statusCode   Int?
+  responseBody String?
+  success      Boolean @default(false)
+
   // Retry
-  attempt         Int      @default(1)
-  nextRetryAt     DateTime?
-  
-  createdAt       DateTime @default(now())
-  
+  attempt     Int       @default(1)
+  nextRetryAt DateTime?
+
+  createdAt DateTime @default(now())
+
   // Relações
-  webhook         Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-  
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
   @@index([webhookId])
   @@index([event])
   @@index([success])
@@ -1930,29 +1895,29 @@ model WebhookDelivery {
 }
 
 model ApiToken {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String
-  
+  id        String @id @default(cuid())
+  companyId String
+  userId    String
+
   // Token
-  name            String
-  token           String   @unique
-  lastUsedAt      DateTime?
-  lastUsedIp      String?
-  
+  name       String
+  token      String    @unique
+  lastUsedAt DateTime?
+  lastUsedIp String?
+
   // Permissões
-  permissions     String   // JSON array de permissões
-  
+  permissions String // JSON array de permissões
+
   // Controle
-  expiresAt       DateTime?
-  isActive        Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([token])
   @@index([isActive])
@@ -1961,36 +1926,36 @@ model ApiToken {
 
 // WhatsApp
 model WhatsAppMessage {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Destinatário
-  phoneNumber     String
-  contactName     String?
-  
+  phoneNumber String
+  contactName String?
+
   // Mensagem
-  template        String?  // Nome do template
-  content         String
-  type            String   @default("TEXT") // TEXT, IMAGE, DOCUMENT, TEMPLATE
-  
+  template String? // Nome do template
+  content  String
+  type     String  @default("TEXT") // TEXT, IMAGE, DOCUMENT, TEMPLATE
+
   // Mídia
-  mediaUrl        String?
-  mediaType       String?
-  
+  mediaUrl  String?
+  mediaType String?
+
   // Status
-  status          String   @default("PENDING") // PENDING, SENT, DELIVERED, READ, FAILED
-  messageId       String?
-  errorMessage    String?
-  
+  status       String  @default("PENDING") // PENDING, SENT, DELIVERED, READ, FAILED
+  messageId    String?
+  errorMessage String?
+
   // Timestamps
-  sentAt          DateTime?
-  deliveredAt     DateTime?
-  readAt          DateTime?
-  createdAt       DateTime @default(now())
-  
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([status])
   @@index([phoneNumber])
@@ -1999,37 +1964,37 @@ model WhatsAppMessage {
 
 // Email
 model EmailMessage {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Destinatários
-  toEmail         String
-  ccEmail         String?
-  bccEmail        String?
-  
+  toEmail  String
+  ccEmail  String?
+  bccEmail String?
+
   // Conteúdo
-  subject         String
-  body            String
-  htmlBody        String?
-  template        String?
-  
+  subject  String
+  body     String
+  htmlBody String?
+  template String?
+
   // Anexos
-  attachments     String?  // JSON array
-  
+  attachments String? // JSON array
+
   // Status
-  status          String   @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, FAILED
-  errorMessage    String?
-  
+  status       String  @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, FAILED
+  errorMessage String?
+
   // Timestamps
-  scheduledFor    DateTime?
-  sentAt          DateTime?
-  openedAt        DateTime?
-  clickedAt       DateTime?
-  createdAt       DateTime @default(now())
-  
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([status])
   @@index([toEmail])
@@ -2038,36 +2003,36 @@ model EmailMessage {
 
 // Google Calendar
 model CalendarEvent {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Evento
-  title           String
-  description     String?
-  type            String   @default("INTERNAL") // INSTALLATION, TECHNICAL, COMMERCIAL, INTERNAL, REMINDER
-  
+  title       String
+  description String?
+  type        String  @default("INTERNAL") // INSTALLATION, TECHNICAL, COMMERCIAL, INTERNAL, REMINDER
+
   // Datas
-  startDate       DateTime
-  endDate         DateTime
-  timezone        String   @default("America/Sao_Paulo")
-  
+  startDate DateTime
+  endDate   DateTime
+  timezone  String   @default("America/Sao_Paulo")
+
   // Participantes
-  attendees       String?  // JSON array
-  organizer       String?
-  
+  attendees String? // JSON array
+  organizer String?
+
   // Sincronização
-  googleEventId   String?
-  syncedAt        DateTime?
-  
+  googleEventId String?
+  syncedAt      DateTime?
+
   // Status
-  status          String   @default("ACTIVE") // ACTIVE, CANCELLED, COMPLETED
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  status String @default("ACTIVE") // ACTIVE, CANCELLED, COMPLETED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([startDate])
   @@index([type])
@@ -2076,36 +2041,36 @@ model CalendarEvent {
 
 // Google Drive
 model StorageFile {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Arquivo
-  name            String
-  type            String   // CONTRACT, WORK_PHOTO, XML, PDF, ATTACHMENT
-  mimeType        String
-  size            Int
-  
+  name     String
+  type     String // CONTRACT, WORK_PHOTO, XML, PDF, ATTACHMENT
+  mimeType String
+  size     Int
+
   // Links
-  fileUrl         String?
-  googleDriveId   String?
-  
+  fileUrl       String?
+  googleDriveId String?
+
   // Organização
-  folderPath      String?  // Caminho virtual ex: "Obra-123/Fotos"
-  workId          String?  // Referência para obra
-  
+  folderPath String? // Caminho virtual ex: "Obra-123/Fotos"
+  workId     String? // Referência para obra
+
   // Metadados
-  uploadedBy      String?
-  metadata        String?  // JSON
-  
+  uploadedBy String?
+  metadata   String? // JSON
+
   // Controle
-  isArchived      Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isArchived Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([type])
   @@index([workId])
@@ -2114,37 +2079,37 @@ model StorageFile {
 
 // Banking APIs
 model BankTransaction {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Transação Bancária
-  bankCode        String
-  accountNumber   String
-  transactionId   String   // ID externo do banco
-  
+  bankCode      String
+  accountNumber String
+  transactionId String // ID externo do banco
+
   // Valores
-  amount          Decimal
-  type            String   // DEBIT, CREDIT
-  currency        String   @default("BRL")
-  
+  amount   Decimal
+  type     String // DEBIT, CREDIT
+  currency String  @default("BRL")
+
   // Informações
-  description     String
-  counterparty    String?  // Outra parte
-  referenceCode   String?
-  
+  description   String
+  counterparty  String? // Outra parte
+  referenceCode String?
+
   // Timestamps
   transactionDate DateTime
   valueDate       DateTime?
-  
+
   // Sincronização
-  syncedAt        DateTime?
-  source          String   @default("MANUAL") // MANUAL, PIX, BOLETO, TRANSFER, API
-  
-  createdAt       DateTime @default(now())
-  
+  syncedAt DateTime?
+  source   String    @default("MANUAL") // MANUAL, PIX, BOLETO, TRANSFER, API
+
+  createdAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@unique([companyId, transactionId])
   @@index([companyId])
   @@index([transactionDate])
@@ -2170,30 +2135,30 @@ enum AIConversationStatus {
 }
 
 model AIConversation {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String
-  
+  id        String @id @default(cuid())
+  companyId String
+  userId    String
+
   // Metadados
-  title           String
-  description     String?
-  category        String? @default("general") // general, analysis, documents, predictions
-  
+  title       String
+  description String?
+  category    String? @default("general") // general, analysis, documents, predictions
+
   // Controle
-  status          AIConversationStatus @default(ACTIVE)
-  isPinned        Boolean  @default(false)
-  
+  status   AIConversationStatus @default(ACTIVE)
+  isPinned Boolean              @default(false)
+
   // Dados
-  tokenCount      Int      @default(0)
-  messageCount    Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  tokenCount   Int @default(0)
+  messageCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  messages        AIMessage[]
-  
+  messages AIMessage[]
+  company  Company     @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([userId])
   @@index([status])
@@ -2201,90 +2166,90 @@ model AIConversation {
 }
 
 model AIMessage {
-  id              String   @id @default(cuid())
-  conversationId  String
-  
+  id             String @id @default(cuid())
+  conversationId String
+
   // Conteúdo
-  role            String   // user, assistant
-  content         String   // @db.Text
-  
+  role    String // user, assistant
+  content String // @db.Text
+
   // Metadados
-  tokens          Int?
-  model           String?
-  responseTime    Int?     // ms
-  
+  tokens       Int?
+  model        String?
+  responseTime Int? // ms
+
   // Análises
-  keywords        String?  // JSON array
-  intent          String?  // classified intent
-  
-  createdAt       DateTime @default(now())
-  
+  keywords String? // JSON array
+  intent   String? // classified intent
+
+  createdAt DateTime @default(now())
+
   // Relações
-  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
   @@index([conversationId])
   @@index([role])
   @@map("ai_messages")
 }
 
 model AIPredefinedPrompt {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Identificação
-  name            String
-  description     String?
-  category        String   // analytics, documents, recommendations, search
-  
+  name        String
+  description String?
+  category    String // analytics, documents, recommendations, search
+
   // Conteúdo
-  template        String   // @db.Text
-  variables       String?  // JSON array de variáveis
-  
+  template  String // @db.Text
+  variables String? // JSON array de variáveis
+
   // Controle
-  isFavorite      Boolean  @default(false)
-  usageCount      Int      @default(0)
-  isShared        Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isFavorite Boolean @default(false)
+  usageCount Int     @default(0)
+  isShared   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([category])
   @@map("ai_predefined_prompts")
 }
 
 model AIInsight {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Identificação
-  type            String   // growth, warning, opportunity, anomaly
-  category        String   // sales, financial, operational, customer
-  
+  type     String // growth, warning, opportunity, anomaly
+  category String // sales, financial, operational, customer
+
   // Conteúdo
-  title           String
-  description     String
-  recommendation  String?
-  
+  title          String
+  description    String
+  recommendation String?
+
   // Dados
-  metric          String?  // métrica associada
-  previousValue   Decimal?
-  currentValue    Decimal?
-  changePercent   Decimal?
-  
+  metric        String? // métrica associada
+  previousValue Decimal?
+  currentValue  Decimal?
+  changePercent Decimal?
+
   // Controle
-  severity        String   @default("info") // info, warning, critical
-  isRead          Boolean  @default(false)
-  isFavorite      Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  
+  severity   String  @default("info") // info, warning, critical
+  isRead     Boolean @default(false)
+  isFavorite Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([type])
   @@index([severity])
@@ -2292,65 +2257,65 @@ model AIInsight {
 }
 
 model AIPrediction {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Tipo de previsão
-  type            String   // revenue, cash_flow, expenses, receivables, demand
-  period          String   // monthly, quarterly, yearly
-  
+  type   String // revenue, cash_flow, expenses, receivables, demand
+  period String // monthly, quarterly, yearly
+
   // Dados
-  predictedValue  Decimal
-  confidence      Decimal  @default(0.85) // 0-1
-  rangeMin        Decimal?
-  rangeMax        Decimal?
-  
+  predictedValue Decimal
+  confidence     Decimal  @default(0.85) // 0-1
+  rangeMin       Decimal?
+  rangeMax       Decimal?
+
   // Base histórica
   historicalPoints String? // JSON com pontos históricos
-  
+
   // Datas
-  fromDate        DateTime
-  toDate          DateTime
-  generatedAt     DateTime @default(now())
-  
+  fromDate    DateTime
+  toDate      DateTime
+  generatedAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([type])
   @@map("ai_predictions")
 }
 
 model AIGeneratedDocument {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Tipo
-  docType         String   // email, proposal, contract, reminder, report
-  
+  docType String // email, proposal, contract, reminder, report
+
   // Conteúdo
-  title           String
-  content         String   // @db.Text
-  
+  title   String
+  content String // @db.Text
+
   // Metadados
-  status          String   @default("draft") // draft, reviewed, sent, archived
-  generatedAt     DateTime @default(now())
-  sentAt          DateTime?
-  
+  status      String    @default("draft") // draft, reviewed, sent, archived
+  generatedAt DateTime  @default(now())
+  sentAt      DateTime?
+
   // Relacionamentos
-  relatedEntity   String?  // cliente, obra, fornecedor, etc
-  relatedId       String?  // ID da entidade
-  
+  relatedEntity String? // cliente, obra, fornecedor, etc
+  relatedId     String? // ID da entidade
+
   // Controle
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([docType])
   @@index([status])
@@ -2358,61 +2323,61 @@ model AIGeneratedDocument {
 }
 
 model AIProviderConfig {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  
+  id        String @id @default(cuid())
+  companyId String @unique
+
   // Provedor
-  provider        AIProvider
-  
+  provider AIProvider
+
   // Credenciais (criptografadas)
-  apiKey          String?
-  apiEndpoint     String?
-  modelId         String?
-  
+  apiKey      String?
+  apiEndpoint String?
+  modelId     String?
+
   // Configurações
-  temperature     Decimal  @default(0.7)
-  maxTokens       Int      @default(2048)
-  topP            Decimal  @default(0.9)
-  
+  temperature Decimal @default(0.7)
+  maxTokens   Int     @default(2048)
+  topP        Decimal @default(0.9)
+
   // Controle
-  isActive        Boolean  @default(true)
-  lastTestedAt    DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isActive     Boolean   @default(true)
+  lastTestedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  companies Company[]
+
   @@map("ai_provider_config")
 }
 
 model AIUsageLog {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String?
-  
+  id        String  @id @default(cuid())
+  companyId String
+  userId    String?
+
   // Uso
-  provider        AIProvider
-  model           String?
-  endpoint        String?
-  
+  provider AIProvider
+  model    String?
+  endpoint String?
+
   // Consumo
-  inputTokens     Int      @default(0)
-  outputTokens    Int      @default(0)
-  totalTokens     Int      @default(0)
-  estimatedCost   Decimal  @default(0)
-  
+  inputTokens   Int     @default(0)
+  outputTokens  Int     @default(0)
+  totalTokens   Int     @default(0)
+  estimatedCost Decimal @default(0)
+
   // Resultado
-  status          String   @default("success") // success, error, timeout
-  errorMessage    String?
-  duration        Int?     // ms
-  
-  createdAt       DateTime @default(now())
-  
+  status       String  @default("success") // success, error, timeout
+  errorMessage String?
+  duration     Int? // ms
+
+  createdAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([createdAt])
   @@map("ai_usage_logs")
@@ -2469,46 +2434,46 @@ enum AuditModule {
 }
 
 model AuditLog {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Usuário que executou
-  userId          String
-  userName        String
-  userEmail       String
-  userRole        String?
-  
+  userId    String
+  userName  String
+  userEmail String
+  userRole  String?
+
   // Ação e contexto
-  module          AuditModule
-  action          AuditAction
-  
+  module AuditModule
+  action AuditAction
+
   // Entidade afetada
-  entity          String   // Cliente, Fornecedor, Obra, OS, Orçamento, etc
-  entityId        String
-  entityName      String?  // Nome para referência rápida
-  
+  entity     String // Cliente, Fornecedor, Obra, OS, Orçamento, etc
+  entityId   String
+  entityName String? // Nome para referência rápida
+
   // Dados antes e depois
-  oldData         String?  // JSON da entidade antes da mudança
-  newData         String?  // JSON da entidade após a mudança
-  changedFields   String?  // JSON array com campos alterados
-  
+  oldData       String? // JSON da entidade antes da mudança
+  newData       String? // JSON da entidade após a mudança
+  changedFields String? // JSON array com campos alterados
+
   // Contexto da requisição
-  ipAddress       String?
-  userAgent       String?  // Browser, device info
-  
+  ipAddress String?
+  userAgent String? // Browser, device info
+
   // Descrição legível
-  description     String?
-  
+  description String?
+
   // Status
-  success         Boolean  @default(true)
-  errorMessage    String?
-  
+  success      Boolean @default(true)
+  errorMessage String?
+
   // Timestamp
-  createdAt       DateTime @default(now())
-  
+  createdAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([userId])
   @@index([entity])
@@ -2524,23 +2489,23 @@ model AuditLog {
 
 // Configuração de Retenção de Logs de Auditoria
 model AuditRetentionPolicy {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  
+  id        String @id @default(cuid())
+  companyId String @unique
+
   // Política de retenção
-  retentionDays   Int      @default(365) // 90, 180, 365, -1 (nunca)
-  autoDelete      Boolean  @default(true)
-  lastCleanupAt   DateTime?
-  
+  retentionDays Int       @default(365) // 90, 180, 365, -1 (nunca)
+  autoDelete    Boolean   @default(true)
+  lastCleanupAt DateTime?
+
   // Notificações
   notifyDaysBeforeDelete Int @default(7)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  companies Company[]
+
   @@map("audit_retention_policies")
 }
 
@@ -2564,81 +2529,81 @@ enum BackupStatus {
 }
 
 model BackupConfiguration {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  
+  id        String @id @default(cuid())
+  companyId String @unique
+
   // Agendamento
-  frequency       BackupFrequency @default(DAILY)
-  scheduledHour   Int      @default(2)      // 0-23
-  scheduledDay    Int?     @default(1)      // Para WEEKLY (0-6) e MONTHLY (1-31)
-  
+  frequency     BackupFrequency @default(DAILY)
+  scheduledHour Int             @default(2) // 0-23
+  scheduledDay  Int?            @default(1) // Para WEEKLY (0-6) e MONTHLY (1-31)
+
   // Configurações
-  retainBackups   Int      @default(30)     // Manter últimos N backups
-  autoDelete      Boolean  @default(true)
-  
+  retainBackups Int     @default(30) // Manter últimos N backups
+  autoDelete    Boolean @default(true)
+
   // Notificações
   notifyEmail     String?
-  notifyOnFailure Boolean  @default(true)
-  
+  notifyOnFailure Boolean @default(true)
+
   // Controle
-  isEnabled       Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  companies Company[]
+
   @@map("backup_configurations")
 }
 
 model Backup {
-  id              String   @id @default(cuid())
-  companyId       String
-  
+  id        String @id @default(cuid())
+  companyId String
+
   // Informações
-  name            String
-  description     String?
-  
+  name        String
+  description String?
+
   // Status
-  status          BackupStatus @default(PENDING)
-  
+  status BackupStatus @default(PENDING)
+
   // Dados do backup
-  size            BigInt?  // Tamanho em bytes
-  fileName        String?  // Nome do arquivo armazenado
-  fileUrl         String?  // URL para download (se armazenado em cloud)
-  
+  size     BigInt? // Tamanho em bytes
+  fileName String? // Nome do arquivo armazenado
+  fileUrl  String? // URL para download (se armazenado em cloud)
+
   // Conteúdo
-  includesDatabase     Boolean @default(true)
-  includesUploads      Boolean @default(true)
-  includesPDFs         Boolean @default(true)
-  includesLogos        Boolean @default(true)
-  includesAttachments  Boolean @default(true)
-  includesXML          Boolean @default(true)
-  
+  includesDatabase    Boolean @default(true)
+  includesUploads     Boolean @default(true)
+  includesPDFs        Boolean @default(true)
+  includesLogos       Boolean @default(true)
+  includesAttachments Boolean @default(true)
+  includesXML         Boolean @default(true)
+
   // Tipo
-  type            String   @default("MANUAL") // MANUAL, AUTOMATIC, SCHEDULED
-  
+  type String @default("MANUAL") // MANUAL, AUTOMATIC, SCHEDULED
+
   // Quem criou
-  createdBy       String
-  createdByName   String?
-  
+  createdBy     String
+  createdByName String?
+
   // Timestamps
-  createdAt       DateTime @default(now())
-  startedAt       DateTime?
-  completedAt     DateTime?
-  
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
   // Restauração
-  lastRestoredAt  DateTime?
-  lastRestoredBy  String?
-  
+  lastRestoredAt DateTime?
+  lastRestoredBy String?
+
   // Metadados
-  metadata        String?  // JSON com info do backup
-  errorMessage    String?
-  
+  metadata     String? // JSON com info do backup
+  errorMessage String?
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([status])
   @@index([createdAt])
@@ -2647,28 +2612,28 @@ model Backup {
 }
 
 model BackupLog {
-  id              String   @id @default(cuid())
-  companyId       String
-  backupId        String?
-  
+  id        String  @id @default(cuid())
+  companyId String
+  backupId  String?
+
   // Ação
-  action          String   // BACKUP_STARTED, BACKUP_COMPLETED, RESTORE_STARTED, RESTORE_COMPLETED
-  
+  action String // BACKUP_STARTED, BACKUP_COMPLETED, RESTORE_STARTED, RESTORE_COMPLETED
+
   // Usuário
-  userId          String
-  userName        String?
-  
+  userId   String
+  userName String?
+
   // Detalhes
-  details         String?  // JSON com detalhes da operação
-  errorMessage    String?
-  success         Boolean  @default(true)
-  
+  details      String? // JSON com detalhes da operação
+  errorMessage String?
+  success      Boolean @default(true)
+
   // Timestamps
-  createdAt       DateTime @default(now())
-  
+  createdAt DateTime @default(now())
+
   // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  company Company @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([backupId])
   @@index([createdAt])
@@ -2676,83 +2641,25 @@ model BackupLog {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NOTIFICAÇÕES - SISTEMA DE NOTIFICAÇÕES EM TEMPO REAL
-// ═══════════════════════════════════════════════════════════════
-
-enum NotificationType {
-  FINANCIAL
-  WORKS
-  SERVICE_ORDER
-  SCHEDULE
-  QUOTE
-  SYSTEM
-  USERS
-}
-
-enum NotificationPriority {
-  LOW
-  NORMAL
-  HIGH
-  CRITICAL
-}
-
-model Notification {
-  id              String   @id @default(cuid())
-  companyId       String
-  userId          String?
-  
-  // Conteúdo
-  title           String
-  description     String?
-  type            NotificationType
-  priority        NotificationPriority @default(NORMAL)
-  
-  // Status
-  read            Boolean  @default(false)
-  readAt          DateTime?
-  
-  // Contexto
-  relatedEntity   String?  // cliente, obra, os, etc
-  relatedId       String?
-  
-  // Action
-  actionUrl       String?
-  
-  // Timestamps
-  createdAt       DateTime @default(now())
-  
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  @@index([companyId])
-  @@index([userId])
-  @@index([read])
-  @@index([createdAt])
-  @@index([companyId, userId, read])
-  @@map("notifications")
-}
-
-// ═══════════════════════════════════════════════════════════════
 // SPRINT 36 - GARANTIAS E ASSISTÊNCIAS TÉCNICAS
 // ═══════════════════════════════════════════════════════════════
 
 model Warranty {
-  id              String   @id @default(cuid())
-  companyId       String
-  workId          String
-  
-  startDate       DateTime
-  endDate         DateTime
-  months          Int
-  type            String   // Estrutura, Funcionamento, Mão de obra
-  responsibleId   String?
-  notes           String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+  workId    String
+
+  startDate     DateTime
+  endDate       DateTime
+  months        Int
+  type          String // Estrutura, Funcionamento, Mão de obra
+  responsibleId String?
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([workId])
   @@index([endDate])
@@ -2776,31 +2683,30 @@ enum SupportTicketPriority {
 }
 
 model SupportTicket {
-  id              String   @id @default(cuid())
-  companyId       String
-  clientId        String?
-  workId          String?
-  
-  ticketNumber    String   @unique
-  title           String
-  description     String?
-  reason          String?
-  status          SupportTicketStatus @default(OPEN)
-  priority        SupportTicketPriority @default(NORMAL)
-  
-  technicianId    String?
-  technicianName  String?
-  
-  openedAt        DateTime @default(now())
-  completedAt     DateTime?
-  
-  attachments     String?  // JSON array de URLs
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  companyId String
+  clientId  String?
+  workId    String?
+
+  ticketNumber String                @unique
+  title        String
+  description  String?
+  reason       String?
+  status       SupportTicketStatus   @default(OPEN)
+  priority     SupportTicketPriority @default(NORMAL)
+
+  technicianId   String?
+  technicianName String?
+
+  openedAt    DateTime  @default(now())
+  completedAt DateTime?
+
+  attachments String? // JSON array de URLs
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([status])
   @@index([priority])
@@ -2809,19 +2715,19 @@ model SupportTicket {
 }
 
 model SupportTicketHistory {
-  id              String   @id @default(cuid())
-  ticketId        String
-  
-  userId          String
-  userName        String?
-  
-  oldStatus       String?
-  newStatus       String?
-  
-  comment         String?
-  
-  createdAt       DateTime @default(now())
-  
+  id       String @id @default(cuid())
+  ticketId String
+
+  userId   String
+  userName String?
+
+  oldStatus String?
+  newStatus String?
+
+  comment String?
+
+  createdAt DateTime @default(now())
+
   @@index([ticketId])
   @@index([createdAt])
   @@map("support_ticket_history")
@@ -2844,23 +2750,22 @@ enum ProductionStage {
 }
 
 model ProductionOrder {
-  id              String   @id @default(cuid())
-  companyId       String
-  workId          String
-  clientId        String?
-  
-  orderNumber     String   @unique
-  responsibleId   String?
-  priority        Int      @default(5)
-  
-  currentStage    ProductionStage @default(PROJECT)
-  status          String   @default("PENDING")
-  
-  createdAt       DateTime @default(now())
-  completedAt     DateTime?
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  companyId String
+  workId    String
+  clientId  String?
+
+  orderNumber   String  @unique
+  responsibleId String?
+  priority      Int     @default(5)
+
+  currentStage ProductionStage @default(PROJECT)
+  status       String          @default("PENDING")
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  company     Company   @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([workId])
   @@index([currentStage])
@@ -2868,17 +2773,17 @@ model ProductionOrder {
 }
 
 model ProductionStageLog {
-  id              String   @id @default(cuid())
-  orderingId      String
-  
-  stage           ProductionStage
-  responsibleId   String?
-  
-  startTime       DateTime @default(now())
-  endTime         DateTime?
-  
-  notes           String?
-  
+  id         String @id @default(cuid())
+  orderingId String
+
+  stage         ProductionStage
+  responsibleId String?
+
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+
+  notes String?
+
   @@index([orderingId])
   @@map("production_stage_logs")
 }
@@ -2888,25 +2793,24 @@ model ProductionStageLog {
 // ═══════════════════════════════════════════════════════════════
 
 model Product {
-  id              String   @id @default(cuid())
-  companyId       String
-  
-  code            String   @unique
-  description     String
-  category        String
-  unit            String   // un, kg, m, etc
-  
-  supplierId      String?
-  averageCost     Decimal  @default(0)
-  minimumStock    Int      @default(0)
-  currentStock    Int      @default(0)
-  location        String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+
+  code        String @unique
+  description String
+  category    String
+  unit        String // un, kg, m, etc
+
+  supplierId   String?
+  averageCost  Decimal @default(0)
+  minimumStock Int     @default(0)
+  currentStock Int     @default(0)
+  location     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([code])
   @@index([category])
@@ -2922,26 +2826,25 @@ enum InventoryMovementType {
 }
 
 model InventoryMovement {
-  id              String   @id @default(cuid())
-  companyId       String
-  productId       String
-  
-  type            InventoryMovementType
-  quantity        Int
-  unitCost        Decimal?
-  
-  reference       String?  // OP, OS, Compra, etc
-  referenceId     String?
-  
-  userId          String?
-  userName        String?
-  
-  notes           String?
-  
-  createdAt       DateTime @default(now())
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+  productId String
+
+  type     InventoryMovementType
+  quantity Int
+  unitCost Decimal?
+
+  reference   String? // OP, OS, Compra, etc
+  referenceId String?
+
+  userId   String?
+  userName String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([productId])
   @@index([type])
@@ -2962,58 +2865,57 @@ enum PurchaseRequestStatus {
 }
 
 model PurchaseRequest {
-  id              String   @id @default(cuid())
-  companyId       String
-  
-  requestNumber   String   @unique
-  requesterId     String?
-  costCenter      String?
-  workId          String?
-  
-  status          PurchaseRequestStatus @default(REQUESTED)
-  justification   String?
-  
+  id        String @id @default(cuid())
+  companyId String
+
+  requestNumber String  @unique
+  requesterId   String?
+  costCenter    String?
+  workId        String?
+
+  status        PurchaseRequestStatus @default(REQUESTED)
+  justification String?
+
   selectedSupplierId String?
-  
-  createdAt       DateTime @default(now())
-  approvedAt      DateTime?
-  purchasedAt     DateTime?
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+
+  createdAt   DateTime  @default(now())
+  approvedAt  DateTime?
+  purchasedAt DateTime?
+  company     Company   @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([status])
   @@map("purchase_requests")
 }
 
 model PurchaseRequestItem {
-  id              String   @id @default(cuid())
-  requestId       String
-  
-  productId       String?
-  productCode     String?
-  description     String
-  quantity        Int
-  unitCost        Decimal?
-  
+  id        String @id @default(cuid())
+  requestId String
+
+  productId   String?
+  productCode String?
+  description String
+  quantity    Int
+  unitCost    Decimal?
+
   @@index([requestId])
   @@map("purchase_request_items")
 }
 
 model SupplierQuote {
-  id              String   @id @default(cuid())
-  requestId       String
-  supplierId      String?
-  
-  totalPrice      Decimal
-  deadline        Int      // dias
-  freight         Decimal  @default(0)
-  conditions      String?
-  
-  selectedAt      DateTime?
-  
-  createdAt       DateTime @default(now())
-  
+  id         String  @id @default(cuid())
+  requestId  String
+  supplierId String?
+
+  totalPrice Decimal
+  deadline   Int // dias
+  freight    Decimal @default(0)
+  conditions String?
+
+  selectedAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([requestId])
   @@map("supplier_quotes")
 }
@@ -3032,39 +2934,6 @@ enum LeadStage {
   CLOSED_LOST
 }
 
-model Lead {
-  id              String   @id @default(cuid())
-  companyId       String
-  
-  name            String
-  company         String?
-  phone           String?
-  whatsapp        String?
-  email           String?
-  city            String?
-  
-  stage           LeadStage @default(LEAD)
-  origin          String?   // Site, Indicação, Google, etc
-  interest        String?
-  
-  salesmanId      String?
-  salesmanName    String?
-  
-  wonValue        Decimal?
-  lossReason      String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  closedAt        DateTime?
-  
-  company_rel     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  @@index([companyId])
-  @@index([stage])
-  @@index([salesmanId])
-  @@map("leads")
-}
-
 enum CommercialTaskType {
   CALL
   VISIT
@@ -3074,26 +2943,25 @@ enum CommercialTaskType {
 }
 
 model CommercialTask {
-  id              String   @id @default(cuid())
-  companyId       String
-  leadId          String
-  
-  type            CommercialTaskType
-  title           String
-  description     String?
-  
-  dueDate         DateTime
-  reminderDate    DateTime?
-  
-  completed       Boolean  @default(false)
-  completedAt     DateTime?
-  
-  assignedTo      String?
-  
-  createdAt       DateTime @default(now())
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+  leadId    String
+
+  type        CommercialTaskType
+  title       String
+  description String?
+
+  dueDate      DateTime
+  reminderDate DateTime?
+
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  assignedTo String?
+
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([leadId])
   @@index([dueDate])
@@ -3105,25 +2973,25 @@ model CommercialTask {
 // ═══════════════════════════════════════════════════════════════
 
 model BudgetApprovalToken {
-  id              String   @id @default(cuid())
-  budgetId        String   @unique
-  token           String   @unique @db.VarChar(255)
-  
-  expiresAt       DateTime
-  approvedAt      DateTime?
-  
-  approverIp      String?
+  id       String @id @default(cuid())
+  budgetId String @unique
+  token    String @unique @db.VarChar(255)
+
+  expiresAt  DateTime
+  approvedAt DateTime?
+
+  approverIp        String?
   approverUserAgent String?
-  approverOs      String?
-  
-  requestChangesAt DateTime?
+  approverOs        String?
+
+  requestChangesAt     DateTime?
   requestChangesReason String?
-  
-  isApproved      Boolean  @default(false)
-  isExpired       Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  
+
+  isApproved Boolean @default(false)
+  isExpired  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
   @@index([token])
   @@index([budgetId])
   @@index([expiresAt])
@@ -3131,22 +2999,22 @@ model BudgetApprovalToken {
 }
 
 model BudgetApprovalHistory {
-  id              String   @id @default(cuid())
-  budgetId        String
-  
-  action          String   // APPROVED, REQUEST_CHANGES, EXPIRED
-  
-  clientName      String?
-  clientEmail     String?
-  
+  id       String @id @default(cuid())
+  budgetId String
+
+  action String // APPROVED, REQUEST_CHANGES, EXPIRED
+
+  clientName  String?
+  clientEmail String?
+
   ipAddress       String?
   userAgent       String?
   operatingSystem String?
-  
-  timestamp       DateTime @default(now())
-  
-  details         String?  // JSON
-  
+
+  timestamp DateTime @default(now())
+
+  details String? // JSON
+
   @@index([budgetId])
   @@index([timestamp])
   @@map("budget_approval_history")
@@ -3176,33 +3044,32 @@ enum InstallationEventType {
 }
 
 model InstallationEvent {
-  id              String   @id @default(cuid())
-  companyId       String
-  workId          String?
-  clientId        String?
-  
-  title           String
-  eventType       InstallationEventType
-  status          InstallationEventStatus @default(SCHEDULED)
-  
-  address         String?
-  latitude        Decimal?
-  longitude       Decimal?
-  
-  startTime       DateTime
-  endTime         DateTime
-  
-  teamMembers     String?  // JSON array de IDs
-  vehicleId       String?
-  priority        Int      @default(5)
-  
-  notes           String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  companyId String
+  workId    String?
+  clientId  String?
+
+  title     String
+  eventType InstallationEventType
+  status    InstallationEventStatus @default(SCHEDULED)
+
+  address   String?
+  latitude  Decimal?
+  longitude Decimal?
+
+  startTime DateTime
+  endTime   DateTime
+
+  teamMembers String? // JSON array de IDs
+  vehicleId   String?
+  priority    Int     @default(5)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([workId])
   @@index([startTime])
@@ -3211,16 +3078,16 @@ model InstallationEvent {
 }
 
 model InstallationEventNotification {
-  id              String   @id @default(cuid())
-  eventId         String
-  
-  userId          String
+  id      String @id @default(cuid())
+  eventId String
+
+  userId           String
   notificationType String // "24_HOURS", "2_HOURS", "30_MINUTES"
-  
-  sentAt          DateTime?
-  
-  createdAt       DateTime @default(now())
-  
+
+  sentAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([eventId])
   @@index([userId])
   @@map("installation_event_notifications")
@@ -3231,70 +3098,68 @@ model InstallationEventNotification {
 // ═══════════════════════════════════════════════════════════════
 
 model ClientPortalUser {
-  id              String   @id @default(cuid())
-  clientId        String   @unique
-  email           String   @unique
-  
-  passwordHash    String
-  
-  lastLoginAt     DateTime?
-  isActive        Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id       String @id @default(cuid())
+  clientId String @unique
+  email    String @unique
+
+  passwordHash String
+
+  lastLoginAt DateTime?
+  isActive    Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([clientId])
   @@map("client_portal_users")
 }
 
 model ClientChat {
-  id              String   @id @default(cuid())
-  companyId       String
-  clientId        String
-  
-  title           String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+  clientId  String
+
+  title String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([clientId])
   @@map("client_chats")
 }
 
 model ClientChatMessage {
-  id              String   @id @default(cuid())
-  chatId          String
-  
-  senderId        String
-  senderName      String?
-  senderType      String   // "client", "staff"
-  
-  message         String
-  
-  createdAt       DateTime @default(now())
-  
+  id     String @id @default(cuid())
+  chatId String
+
+  senderId   String
+  senderName String?
+  senderType String // "client", "staff"
+
+  message String
+
+  createdAt DateTime @default(now())
+
   @@index([chatId])
   @@index([createdAt])
   @@map("client_chat_messages")
 }
 
 model ClientFeedback {
-  id              String   @id @default(cuid())
-  companyId       String
-  clientId        String
-  workId          String
-  
-  rating          Int      // 1-5
-  comment         String?
-  nps             Int?     // Net Promoter Score
-  
-  submittedAt     DateTime @default(now())
-  
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String @id @default(cuid())
+  companyId String
+  clientId  String
+  workId    String
+
+  rating  Int // 1-5
+  comment String?
+  nps     Int? // Net Promoter Score
+
+  submittedAt DateTime @default(now())
+  company     Company  @relation(fields: [companyId], references: [id])
+
   @@index([companyId])
   @@index([clientId])
   @@map("client_feedback")
