@@ -82,6 +82,9 @@ model Company {
   auditRetentionPolicyId String?
   backupConfigurationId  String?
   serviceOrders          ServiceOrder[]
+  commissionRules        CommissionRule[] // GO LIVE 2
+  commissionPayments     CommissionPayment[] // GO LIVE 2
+  commissionHistories    CommissionHistory[] // GO LIVE 2
 
   @@index([plan])
   @@index([status])
@@ -149,9 +152,13 @@ model Employee {
   name           String
   email          String?
   phone          String?
+  cpf            String? // GO LIVE 2: CPF do vendedor
   role           EmployeeRole   @default(OTHER)
   commissionRate Decimal        @default(0) @db.Decimal(5, 2)
   status         EmployeeStatus @default(ACTIVE)
+  hireDate       DateTime? // GO LIVE 2: Data de admissão
+  notes          String? // GO LIVE 2: Observações
+  isSalesperson  Boolean        @default(false) // GO LIVE 2: Flag para vendedor
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deletedAt      DateTime?
@@ -169,6 +176,9 @@ model Employee {
   serviceOrders            ServiceOrder[]      @relation("ServiceOrderVendedor")
   osInstallations          OSInstallation[]
   osCommissions            OSCommission[]
+  commissionPayments       CommissionPayment[] // GO LIVE 2
+  commissionRules          CommissionRule[] // GO LIVE 2
+  commissionHistories      CommissionHistory[] // GO LIVE 2
   company                  Company             @relation(fields: [companyId], references: [id])
   osproductionStages       OSProductionStage[]
   oscomments               OSComment[]
@@ -176,7 +186,9 @@ model Employee {
   @@index([companyId])
   @@index([status])
   @@index([email])
+  @@index([isSalesperson])
   @@index([companyId, status])
+  @@index([companyId, isSalesperson])
   @@map("employees")
 }
 
@@ -967,27 +979,27 @@ model OSAttachment {
 
 // Materiais necessários para a OS
 model OSMaterial {
-  id              String   @id @default(cuid())
-  serviceOrderId  String
-  sequence        Int      // Ordem de exibição
-  name            String   // Ex: Alumínio 40x40, Vidro Verde 5mm
-  category        String   // ALUMINIO, VIDRO, FERRAGENS, ACESSORIOS, OUTROS
-  description     String?
-  quantity        Decimal  @db.Decimal(10, 2)
-  unit            String?  @default("un") // un, m, m2, kg, etc
-  unitCost        Decimal  @db.Decimal(12, 2)
-  totalCost       Decimal  @db.Decimal(15, 2) // Calculated: quantity * unitCost
-  supplier        String?  // Fornecedor
-  status          String   @default("PENDING") // PENDING, PURCHASED, RECEIVED, PARTIAL, CANCELLED
-  purchaseDate    DateTime?
-  receivedDate    DateTime?
-  receivedQty     Decimal? @db.Decimal(10, 2) // Quantidade recebida
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  serviceOrderId String
+  sequence       Int // Ordem de exibição
+  name           String // Ex: Alumínio 40x40, Vidro Verde 5mm
+  category       String // ALUMINIO, VIDRO, FERRAGENS, ACESSORIOS, OUTROS
+  description    String?
+  quantity       Decimal   @db.Decimal(10, 2)
+  unit           String?   @default("un") // un, m, m2, kg, etc
+  unitCost       Decimal   @db.Decimal(12, 2)
+  totalCost      Decimal   @db.Decimal(15, 2) // Calculated: quantity * unitCost
+  supplier       String? // Fornecedor
+  status         String    @default("PENDING") // PENDING, PURCHASED, RECEIVED, PARTIAL, CANCELLED
+  purchaseDate   DateTime?
+  receivedDate   DateTime?
+  receivedQty    Decimal?  @db.Decimal(10, 2) // Quantidade recebida
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relações
-  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
 
   @@index([serviceOrderId])
   @@index([status])
@@ -997,29 +1009,144 @@ model OSMaterial {
 
 // Comissão por vendedor
 model OSCommission {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   serviceOrderId  String
   vendedorId      String
-  osValue         Decimal  @db.Decimal(15, 2) // Valor da OS
-  commissionRate  Float    @default(5.0) // Percentual (ex: 5.0 = 5%)
-  commissionValue Decimal  @db.Decimal(15, 2) // Calculated: osValue * (commissionRate / 100)
-  status          String   @default("PENDING") // PENDING, APPROVED, PAID, CANCELLED
+  osValue         Decimal   @db.Decimal(15, 2) // Valor da OS
+  commissionRate  Float     @default(5.0) // Percentual (ex: 5.0 = 5%)
+  commissionValue Decimal   @db.Decimal(15, 2) // Calculated: osValue * (commissionRate / 100)
+  status          String    @default("PENDING") // PENDING, APPROVED, PAID, CANCELLED
   approvedBy      String?
   approvedAt      DateTime?
   paidAt          DateTime?
   notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relações
-  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
-  vendedor        Employee     @relation(fields: [vendedorId], references: [id], onDelete: Restrict)
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  vendedor     Employee     @relation(fields: [vendedorId], references: [id], onDelete: Restrict)
 
   @@unique([serviceOrderId, vendedorId])
   @@index([serviceOrderId])
   @@index([vendedorId])
   @@index([status])
   @@map("os_commissions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GO LIVE 2 — GERENCIAMENTO DE COMISSÕES E PAGAMENTOS
+// ═══════════════════════════════════════════════════════════════
+
+// Regras de Comissão personalizadas por vendedor
+model CommissionRule {
+  id          String  @id @default(cuid())
+  companyId   String
+  employeeId  String
+  name        String // Ex: "Comissão Padrão", "Comissão Premium"
+  description String?
+
+  // Tipos de regra
+  ruleType       String   @default("PERCENTAGE") // PERCENTAGE, FIXED, TIERED
+  basePercentage Decimal  @db.Decimal(5, 2) // Percentual base
+  minValue       Decimal? @db.Decimal(15, 2) // Valor mínimo para aplicar
+  maxValue       Decimal? @db.Decimal(15, 2) // Valor máximo
+
+  // Tier progressivo (para ruleType = TIERED)
+  tier1Percentage Decimal? @db.Decimal(5, 2)
+  tier1UpTo       Decimal? @db.Decimal(15, 2)
+  tier2Percentage Decimal? @db.Decimal(5, 2)
+  tier2UpTo       Decimal? @db.Decimal(15, 2)
+  tier3Percentage Decimal? @db.Decimal(5, 2)
+
+  isActive   Boolean   @default(true)
+  validFrom  DateTime?
+  validUntil DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relações
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([isActive])
+  @@map("commission_rules")
+}
+
+// Pagamento de Comissão
+model CommissionPayment {
+  id         String @id @default(cuid())
+  companyId  String
+  employeeId String
+
+  // Período
+  referenceMonth Int // Mês de referência (1-12)
+  referenceYear  Int // Ano de referência
+
+  // Valores
+  totalCommission    Decimal @db.Decimal(15, 2) // Total de comissões no mês
+  approvedCommission Decimal @db.Decimal(15, 2) // Comissão aprovada para pagamento
+  paidAmount         Decimal @db.Decimal(15, 2) // Valor efetivamente pago
+
+  // Status
+  status           String    @default("PENDING") // PENDING, APPROVED, PAID, CANCELLED
+  approvedBy       String? // Usuário que aprovou
+  approvedAt       DateTime?
+  paidAt           DateTime?
+  paidVia          String? // PIX, TRANSFERENCIA, CHEQUE, etc
+  paymentReference String? // Número de documento/comprovante
+
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relações
+  employee  Employee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  company   Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  histories CommissionHistory[]
+
+  @@unique([companyId, employeeId, referenceYear, referenceMonth])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([referenceYear, referenceMonth])
+  @@map("commission_payments")
+}
+
+// Histórico/Auditoria de Comissões
+model CommissionHistory {
+  id                  String  @id @default(cuid())
+  companyId           String
+  commissionPaymentId String?
+  employeeId          String
+  osCommissionId      String?
+
+  // Tipo de evento
+  eventType   String // CREATED, CALCULATED, APPROVED, RELEASED, PAID, REVERSED, CANCELLED
+  description String
+
+  // Valores anteriores/atuais
+  previousValue Decimal? @db.Decimal(15, 2)
+  newValue      Decimal? @db.Decimal(15, 2)
+
+  // Auditoria
+  createdBy String? // Usuário que realizou ação
+  metadata  String? // JSON com dados adicionais
+  createdAt DateTime @default(now())
+
+  // Relações
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee          Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  commissionPayment CommissionPayment? @relation(fields: [commissionPaymentId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("commission_histories")
 }
 
 // Configurações da Empresa
@@ -3014,7 +3141,7 @@ model SupportTicketHistory {
 
 // ═══════════════════════════════════════════════════════════════
 // SPRINT 37 - CONTROLE DE PRODUÇÃO
-// ═══════════════════════════════════════════════════════════════
+// ═══════���═══════════════════════════════════════════════════════
 
 enum ProductionStage {
   PROJECT
@@ -3069,7 +3196,7 @@ model ProductionStageLog {
 
 // ═══════════════════════════════════════════════════════════════
 // SPRINT 38 - ESTOQUE INTELIGENTE
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════��═══════════════════════════════
 
 model Product {
   id        String @id @default(cuid())
