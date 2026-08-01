@@ -9,7 +9,14 @@ import { OSProductsTab } from '@/components/os/os-products-tab'
 import { OSProductionTab } from '@/components/os/os-production-tab'
 import { OSInstallationTab } from '@/components/os/os-installation-tab'
 import { OSCommentsTab } from '@/components/os/os-comments-tab'
+import { OsMaterialsTab } from '@/components/os/os-materials-tab'
+import { OsCommissionTab } from '@/components/os/os-commission-tab'
+import { OsProgressBar } from '@/components/os/os-progress-bar'
+import { OsMetricsCards } from '@/components/os/os-metrics-cards'
+import { OsChecklist } from '@/components/os/os-checklist'
 import { getServiceOrder, changeServiceOrderStatus } from '@/app/actions/os'
+import { listMaterials, getMaterialsStats } from '@/app/actions/os-materials'
+import { listCommissions, getCommissionsStats } from '@/app/actions/os-commission'
 import { formatDate, formatCurrency } from '@/src/lib/utils'
 import type { ServiceOrderStatus } from '@/src/types/os'
 import { ArrowLeft, MoreVertical } from 'lucide-react'
@@ -26,6 +33,8 @@ export default function OSDetailPage() {
   const osId = params.id as string
 
   const [os, setOS] = useState<any>(null)
+  const [materials, setMaterials] = useState<any[]>([])
+  const [commissions, setCommissions] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isChangingStatus, setIsChangingStatus] = useState(false)
 
@@ -35,6 +44,22 @@ export default function OSDetailPage() {
         setIsLoading(true)
         const data = await getServiceOrder(osId)
         setOS(data)
+
+        // Load materials for 1B
+        try {
+          const mats = await listMaterials(osId)
+          setMaterials(mats || [])
+        } catch (e) {
+          console.log('Materials not available yet')
+        }
+
+        // Load commissions for 1B
+        try {
+          const comms = await listCommissions(osId)
+          setCommissions(comms || [])
+        } catch (e) {
+          console.log('Commissions not available yet')
+        }
       } catch (error) {
         console.error('Error loading OS:', error)
         router.push('/os')
@@ -121,12 +146,15 @@ export default function OSDetailPage() {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-10 h-auto">
           <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="progresso">Progresso</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
+          <TabsTrigger value="materiais">Materiais</TabsTrigger>
           <TabsTrigger value="producao">Produção</TabsTrigger>
           <TabsTrigger value="instalacao">Instalação</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+          <TabsTrigger value="comissao">Comissão</TabsTrigger>
           <TabsTrigger value="comentarios">Comentários</TabsTrigger>
           <TabsTrigger value="anexos">Anexos</TabsTrigger>
         </TabsList>
@@ -160,6 +188,29 @@ export default function OSDetailPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="progresso" className="space-y-6">
+          <OsProgressBar
+            data={{
+              overallProgress: 65,
+              productionProgress: 80,
+              installationProgress: 0,
+              estimatedDays: 14,
+              elapsedDays: 9,
+              remainingDays: 5,
+              isOverdue: false,
+            }}
+          />
+          <OsMetricsCards
+            cards={[
+              { label: 'Status', value: os.status, color: 'info' },
+              { label: 'Prioridade', value: os.priority || 'Normal', color: 'default' },
+              { label: 'Cliente', value: os.client?.name || '-', color: 'info' },
+              { label: 'Vendedor', value: os.vendedor?.name || '-', color: 'info' },
+            ]}
+            columns={4}
+          />
+        </TabsContent>
+
         <TabsContent value="produtos">
           <OSProductsTab
             serviceOrderId={os.id}
@@ -175,6 +226,47 @@ export default function OSDetailPage() {
                 ...os,
                 products: os.products?.filter((p: any) => p.id !== productId) || [],
               })
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="materiais">
+          <OsMaterialsTab
+            serviceOrderId={os.id}
+            materials={materials}
+            isLoading={isLoading}
+            onAddMaterial={async (material) => {
+              try {
+                // Material action would be called here
+                const updated = await listMaterials(os.id)
+                setMaterials(updated || [])
+              } catch (error) {
+                console.error('Error adding material:', error)
+              }
+            }}
+            onUpdateMaterial={async (id, material) => {
+              try {
+                const updated = await listMaterials(os.id)
+                setMaterials(updated || [])
+              } catch (error) {
+                console.error('Error updating material:', error)
+              }
+            }}
+            onDeleteMaterial={async (id) => {
+              try {
+                const updated = await listMaterials(os.id)
+                setMaterials(updated || [])
+              } catch (error) {
+                console.error('Error deleting material:', error)
+              }
+            }}
+            onAutoCalculate={async () => {
+              try {
+                const updated = await listMaterials(os.id)
+                setMaterials(updated || [])
+              } catch (error) {
+                console.error('Error auto-calculating:', error)
+              }
             }}
           />
         </TabsContent>
@@ -238,6 +330,31 @@ export default function OSDetailPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="comissao">
+          <OsCommissionTab
+            serviceOrderId={os.id}
+            commissions={commissions}
+            osValue={os.totalValue || 0}
+            isLoading={isLoading}
+            onApprove={async (id) => {
+              try {
+                const updated = await listCommissions(os.id)
+                setCommissions(updated || [])
+              } catch (error) {
+                console.error('Error approving commission:', error)
+              }
+            }}
+            onPay={async (id) => {
+              try {
+                const updated = await listCommissions(os.id)
+                setCommissions(updated || [])
+              } catch (error) {
+                console.error('Error paying commission:', error)
+              }
+            }}
+          />
+        </TabsContent>
+
         <TabsContent value="comentarios">
           <OSCommentsTab
             serviceOrderId={os.id}
@@ -252,7 +369,23 @@ export default function OSDetailPage() {
         </TabsContent>
 
         <TabsContent value="anexos" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">Funcionalidade de anexos em desenvolvimento</div>
+          <OsChecklist
+            serviceOrderId={os.id}
+            items={[]}
+            isLoading={isLoading}
+            onAddItem={async (item) => {
+              console.log('Adding checklist item:', item)
+            }}
+            onUpdateItem={async (id, item) => {
+              console.log('Updating checklist item:', id, item)
+            }}
+            onDeleteItem={async (id) => {
+              console.log('Deleting checklist item:', id)
+            }}
+            onUploadPhoto={async (itemId, file) => {
+              console.log('Uploading photo for:', itemId, file)
+            }}
+          />
         </TabsContent>
       </Tabs>
 

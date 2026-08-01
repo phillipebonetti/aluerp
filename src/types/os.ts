@@ -8,6 +8,9 @@ export type ServiceOrderPriority = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
 export type ProductionStageStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
 export type OSCommentType = 'COMMENT' | 'STATUS_CHANGE' | 'NOTE' | 'ATTACHMENT_ADDED'
 export type AttachmentCategory = 'PHOTO' | 'DOCUMENT' | 'DRAWING' | 'VIDEO'
+export type MaterialStatus = 'PENDING' | 'PURCHASED' | 'RECEIVED' | 'PARTIAL' | 'CANCELLED'
+export type MaterialCategory = 'ALUMINIO' | 'VIDRO' | 'FERRAGENS' | 'ACESSORIOS' | 'OUTROS'
+export type CommissionStatus = 'PENDING' | 'APPROVED' | 'PAID' | 'CANCELLED'
 
 export interface ServiceOrder {
   id: string
@@ -280,4 +283,108 @@ export type OSWorkflow = {
   archived: {
     next: []
   }
+}
+
+// GO LIVE 1B - Material Management
+export interface OSMaterial {
+  id: string
+  serviceOrderId: string
+  sequence: number
+  name: string
+  category: MaterialCategory
+  description?: string
+  quantity: number
+  unit?: string
+  unitCost: number
+  totalCost: number
+  supplier?: string
+  status: MaterialStatus
+  purchaseDate?: Date
+  receivedDate?: Date
+  receivedQty?: number
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+// GO LIVE 1B - Commission Management
+export interface OSCommission {
+  id: string
+  serviceOrderId: string
+  vendedorId: string
+  osValue: number
+  commissionRate: number // Em percentual (ex: 5.0 = 5%)
+  commissionValue: number // Valor calculado
+  status: CommissionStatus
+  approvedBy?: string
+  approvedAt?: Date
+  paidAt?: Date
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+  vendedor?: {
+    id: string
+    name: string
+  }
+}
+
+// GO LIVE 1B - Progress Bar Data
+export interface OSProgressData {
+  overallProgress: number // 0-100
+  productionProgress: number
+  installationProgress: number
+  stage: ServiceOrderStatus
+  estimatedDays: number
+  elapsedDays: number
+  remainingDays: number
+  isOverdue: boolean
+}
+
+// GO LIVE 1B - Metrics Card Data
+export interface OSMetricsCard {
+  label: string
+  value: string | number
+  color: 'success' | 'warning' | 'danger' | 'info' | 'default'
+  icon?: string
+  trend?: 'up' | 'down' | 'neutral'
+  trendPercentage?: number
+}
+
+// GO LIVE 1B - Checklist Item
+export interface OSChecklistItem {
+  id: string
+  title: string
+  description?: string
+  completed: boolean
+  completedBy?: string
+  completedAt?: Date
+  photoUrl?: string // Foto obrigatória
+  notes?: string
+}
+
+// GO LIVE 1B - Kanban Card Data
+export interface OSKanbanCard {
+  id: string
+  osNumber: string
+  client: string
+  stage: string
+  priority: ServiceOrderPriority
+  status: ProductionStageStatus
+  assignee?: string
+  dueDate?: Date
+  progress: number
+  tags: string[]
+}
+
+// GO LIVE 1B - Gantt Task
+export interface OSGanttTask {
+  id: string
+  name: string
+  start: Date
+  end: Date
+  progress: number
+  dependencies: string[]
+  assignee?: string
+  isMilestone: boolean
+  isBlocked: boolean
 }

@@ -168,6 +168,7 @@ model Employee {
   salesGoals               SalesGoal[]
   serviceOrders            ServiceOrder[]      @relation("ServiceOrderVendedor")
   osInstallations          OSInstallation[]
+  osCommissions            OSCommission[]
   company                  Company             @relation(fields: [companyId], references: [id])
   osproductionStages       OSProductionStage[]
   oscomments               OSComment[]
@@ -823,6 +824,8 @@ model ServiceOrder {
   installations    OSInstallation[]
   comments         OSComment[]
   attachments      OSAttachment[]
+  materials        OSMaterial[]
+  commissions      OSCommission[]
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -956,6 +959,67 @@ model OSAttachment {
   @@index([uploadedBy])
   @@index([category])
   @@map("os_attachments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORDEM DE SERVIÇO — GO LIVE 1B - MATERIAIS E COMISSÃO
+// ═══════════════════════════════════════════════════════════════
+
+// Materiais necessários para a OS
+model OSMaterial {
+  id              String   @id @default(cuid())
+  serviceOrderId  String
+  sequence        Int      // Ordem de exibição
+  name            String   // Ex: Alumínio 40x40, Vidro Verde 5mm
+  category        String   // ALUMINIO, VIDRO, FERRAGENS, ACESSORIOS, OUTROS
+  description     String?
+  quantity        Decimal  @db.Decimal(10, 2)
+  unit            String?  @default("un") // un, m, m2, kg, etc
+  unitCost        Decimal  @db.Decimal(12, 2)
+  totalCost       Decimal  @db.Decimal(15, 2) // Calculated: quantity * unitCost
+  supplier        String?  // Fornecedor
+  status          String   @default("PENDING") // PENDING, PURCHASED, RECEIVED, PARTIAL, CANCELLED
+  purchaseDate    DateTime?
+  receivedDate    DateTime?
+  receivedQty     Decimal? @db.Decimal(10, 2) // Quantidade recebida
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOrderId])
+  @@index([status])
+  @@index([category])
+  @@map("os_materials")
+}
+
+// Comissão por vendedor
+model OSCommission {
+  id              String   @id @default(cuid())
+  serviceOrderId  String
+  vendedorId      String
+  osValue         Decimal  @db.Decimal(15, 2) // Valor da OS
+  commissionRate  Float    @default(5.0) // Percentual (ex: 5.0 = 5%)
+  commissionValue Decimal  @db.Decimal(15, 2) // Calculated: osValue * (commissionRate / 100)
+  status          String   @default("PENDING") // PENDING, APPROVED, PAID, CANCELLED
+  approvedBy      String?
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  vendedor        Employee     @relation(fields: [vendedorId], references: [id], onDelete: Restrict)
+
+  @@unique([serviceOrderId, vendedorId])
+  @@index([serviceOrderId])
+  @@index([vendedorId])
+  @@index([status])
+  @@map("os_commissions")
 }
 
 // Configurações da Empresa
@@ -3066,7 +3130,7 @@ model InventoryMovement {
   @@map("inventory_movements")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ══════════════���════════════════════════════════════════════════
 // SPRINT 39 - COMPRAS INTELIGENTES
 // ═══════════════════════════════════════════════════════════════
 
