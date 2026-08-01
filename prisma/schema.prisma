@@ -68,6 +68,14 @@ model Company {
   backups         Backup[]
   backupLogs      BackupLog[]
   notifications   Notification[]
+  warranties      Warranty[]
+  supportTickets  SupportTicket[]
+  productionOrders ProductionOrder[]
+  products        Product[]
+  inventoryMovements InventoryMovement[]
+  purchaseRequests PurchaseRequest[]
+  commercialTasks CommercialTask[]
+  leads           Lead[]
 
   @@index([plan])
   @@index([status])
@@ -695,7 +703,7 @@ model WorkAttachment {
 
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ════════════════════════════════════════════════════════��══════
+// ════════════════════════════════════════════���═══════════��══════
 // ORÇAMENTOS / COTAÇÕES
 // ════════════════���══════════════��═══════��══════════��════════════
 
@@ -2719,4 +2727,372 @@ model Notification {
   @@index([createdAt])
   @@index([companyId, userId, read])
   @@map("notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 36 - GARANTIAS E ASSISTÊNCIAS TÉCNICAS
+// ═══════════════════════════════════════════════════════════════
+
+model Warranty {
+  id              String   @id @default(cuid())
+  companyId       String
+  workId          String
+  
+  startDate       DateTime
+  endDate         DateTime
+  months          Int
+  type            String   // Estrutura, Funcionamento, Mão de obra
+  responsibleId   String?
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([workId])
+  @@index([endDate])
+  @@map("warranties")
+}
+
+enum SupportTicketStatus {
+  OPEN
+  SCHEDULED
+  IN_PROGRESS
+  WAITING_PARTS
+  COMPLETED
+  CANCELLED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+model SupportTicket {
+  id              String   @id @default(cuid())
+  companyId       String
+  clientId        String?
+  workId          String?
+  
+  ticketNumber    String   @unique
+  title           String
+  description     String?
+  reason          String?
+  status          SupportTicketStatus @default(OPEN)
+  priority        SupportTicketPriority @default(NORMAL)
+  
+  technicianId    String?
+  technicianName  String?
+  
+  openedAt        DateTime @default(now())
+  completedAt     DateTime?
+  
+  attachments     String?  // JSON array de URLs
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([priority])
+  @@index([technicianId])
+  @@map("support_tickets")
+}
+
+model SupportTicketHistory {
+  id              String   @id @default(cuid())
+  ticketId        String
+  
+  userId          String
+  userName        String?
+  
+  oldStatus       String?
+  newStatus       String?
+  
+  comment         String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("support_ticket_history")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 37 - CONTROLE DE PRODUÇÃO
+// ═══════════════════════════════════════════════════════════════
+
+enum ProductionStage {
+  PROJECT
+  CUT
+  MACHINING
+  ASSEMBLY
+  PAINTING
+  GLASS
+  INSPECTION
+  PACKAGING
+  READY
+}
+
+model ProductionOrder {
+  id              String   @id @default(cuid())
+  companyId       String
+  workId          String
+  clientId        String?
+  
+  orderNumber     String   @unique
+  responsibleId   String?
+  priority        Int      @default(5)
+  
+  currentStage    ProductionStage @default(PROJECT)
+  status          String   @default("PENDING")
+  
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([workId])
+  @@index([currentStage])
+  @@map("production_orders")
+}
+
+model ProductionStageLog {
+  id              String   @id @default(cuid())
+  orderingId      String
+  
+  stage           ProductionStage
+  responsibleId   String?
+  
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  
+  notes           String?
+  
+  @@index([orderingId])
+  @@map("production_stage_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 38 - ESTOQUE INTELIGENTE
+// ═══════════════════════════════════════════════════════════════
+
+model Product {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  code            String   @unique
+  description     String
+  category        String
+  unit            String   // un, kg, m, etc
+  
+  supplierId      String?
+  averageCost     Decimal  @default(0)
+  minimumStock    Int      @default(0)
+  currentStock    Int      @default(0)
+  location        String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([code])
+  @@index([category])
+  @@map("products")
+}
+
+enum InventoryMovementType {
+  ENTRY
+  EXIT
+  TRANSFER
+  ADJUSTMENT
+  LOSS
+}
+
+model InventoryMovement {
+  id              String   @id @default(cuid())
+  companyId       String
+  productId       String
+  
+  type            InventoryMovementType
+  quantity        Int
+  unitCost        Decimal?
+  
+  reference       String?  // OP, OS, Compra, etc
+  referenceId     String?
+  
+  userId          String?
+  userName        String?
+  
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([productId])
+  @@index([type])
+  @@map("inventory_movements")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 39 - COMPRAS INTELIGENTES
+// ═══════════════════════════════════════════════════════════════
+
+enum PurchaseRequestStatus {
+  REQUESTED
+  ANALYZING
+  APPROVED
+  PURCHASED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseRequest {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  requestNumber   String   @unique
+  requesterId     String?
+  costCenter      String?
+  workId          String?
+  
+  status          PurchaseRequestStatus @default(REQUESTED)
+  justification   String?
+  
+  selectedSupplierId String?
+  
+  createdAt       DateTime @default(now())
+  approvedAt      DateTime?
+  purchasedAt     DateTime?
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([status])
+  @@map("purchase_requests")
+}
+
+model PurchaseRequestItem {
+  id              String   @id @default(cuid())
+  requestId       String
+  
+  productId       String?
+  productCode     String?
+  description     String
+  quantity        Int
+  unitCost        Decimal?
+  
+  @@index([requestId])
+  @@map("purchase_request_items")
+}
+
+model SupplierQuote {
+  id              String   @id @default(cuid())
+  requestId       String
+  supplierId      String?
+  
+  totalPrice      Decimal
+  deadline        Int      // dias
+  freight         Decimal  @default(0)
+  conditions      String?
+  
+  selectedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([requestId])
+  @@map("supplier_quotes")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPRINT 40 - CRM COMERCIAL AVANÇADO
+// ═══════════════════════════════════════════════════════════════
+
+enum LeadStage {
+  LEAD
+  FIRST_CONTACT
+  VISIT
+  QUOTE
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  name            String
+  company         String?
+  phone           String?
+  whatsapp        String?
+  email           String?
+  city            String?
+  
+  stage           LeadStage @default(LEAD)
+  origin          String?   // Site, Indicação, Google, etc
+  interest        String?
+  
+  salesmanId      String?
+  salesmanName    String?
+  
+  wonValue        Decimal?
+  lossReason      String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  closedAt        DateTime?
+  
+  company_rel     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([stage])
+  @@index([salesmanId])
+  @@map("leads")
+}
+
+enum CommercialTaskType {
+  CALL
+  VISIT
+  MESSAGE
+  MEETING
+  FOLLOW_UP
+}
+
+model CommercialTask {
+  id              String   @id @default(cuid())
+  companyId       String
+  leadId          String
+  
+  type            CommercialTaskType
+  title           String
+  description     String?
+  
+  dueDate         DateTime
+  reminderDate    DateTime?
+  
+  completed       Boolean  @default(false)
+  completedAt     DateTime?
+  
+  assignedTo      String?
+  
+  createdAt       DateTime @default(now())
+  
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([leadId])
+  @@index([dueDate])
+  @@map("commercial_tasks")
 }
