@@ -47,6 +47,14 @@ model Company {
   dashboardLayouts    DashboardLayout[]
   reportTemplates     ReportTemplate[]
   reportExports       ReportExport[]
+  integrations    Integration[]
+  webhooks        Webhook[]
+  apiTokens       ApiToken[]
+  whatsappMessages WhatsAppMessage[]
+  emailMessages   EmailMessage[]
+  calendarEvents  CalendarEvent[]
+  storageFiles    StorageFile[]
+  bankTransactions BankTransaction[]
 
   @@index([plan])
   @@index([status])
@@ -909,7 +917,7 @@ model Transaction {
 
 // ══════════════════════════════════���════════════════════════════
 // AUDITORIA
-// ═══════════���═══════════���═══════════════════════════════════════
+// ═══════════���═══════════���══���════════════════════════════════════
 
 model AuditLog {
   id              String   @id @default(cuid())
@@ -1882,4 +1890,386 @@ model ReportExport {
   @@index([userId])
   @@index([status])
   @@map("report_exports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTEGRAÇÕES E CONECTORES EXTERNOS
+// ═══════════════════════════════════════════════════════════════
+
+enum IntegrationProvider {
+  WHATSAPP
+  EMAIL
+  GOOGLE_CALENDAR
+  GOOGLE_DRIVE
+  CONTA_AZUL
+  PIX_BANKING
+  BOLETO_BANKING
+  ZAPIER
+  MAKE
+  CUSTOM
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  PENDING
+  EXPIRED
+}
+
+enum IntegrationLogLevel {
+  INFO
+  WARNING
+  ERROR
+  DEBUG
+}
+
+model Integration {
+  id              String   @id @default(cuid())
+  companyId       String
+  provider        IntegrationProvider
+  name            String
+  description     String?
+  status          IntegrationStatus @default(DISCONNECTED)
+  
+  // Credenciais (criptografadas)
+  credentials     String?  // JSON criptografado
+  
+  // Configurações
+  config          String?  // JSON com settings customizados
+  
+  // Sincronização
+  lastSync        DateTime?
+  lastError       String?
+  syncFrequency   String? @default("HOURLY") // MANUAL, HOURLY, DAILY, WEEKLY
+  
+  // Controle
+  isActive        Boolean  @default(false)
+  enabledAt       DateTime?
+  disabledAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  logs            IntegrationLog[]
+  webhooks        Webhook[]
+  
+  @@unique([companyId, provider])
+  @@index([companyId])
+  @@index([provider])
+  @@index([status])
+  @@map("integrations")
+}
+
+model IntegrationLog {
+  id              String   @id @default(cuid())
+  integrationId   String
+  level           IntegrationLogLevel @default(INFO)
+  
+  // Request
+  endpoint        String?
+  method          String?  @default("GET")
+  requestData     String?  // JSON
+  
+  // Response
+  statusCode      Int?
+  responseData    String?  // JSON
+  errorMessage    String?
+  
+  // Performance
+  duration        Int?     // milliseconds
+  
+  // Metadados
+  metadata        String?  // JSON livre
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  @@index([integrationId])
+  @@index([createdAt])
+  @@index([level])
+  @@map("integration_logs")
+}
+
+model Webhook {
+  id              String   @id @default(cuid())
+  companyId       String
+  integrationId   String
+  
+  // URL e Eventos
+  url             String
+  events          String   // JSON array de eventos
+  secret          String?  // Token para validação
+  
+  // Status e Controle
+  isActive        Boolean  @default(true)
+  lastTriggered   DateTime?
+  failureCount    Int      @default(0)
+  maxRetries      Int      @default(3)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  deliveries      WebhookDelivery[]
+  
+  @@index([companyId])
+  @@index([integrationId])
+  @@index([isActive])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id              String   @id @default(cuid())
+  webhookId       String
+  
+  // Evento disparado
+  event           String
+  payload         String   // JSON
+  
+  // Resultado
+  statusCode      Int?
+  responseBody    String?
+  success         Boolean  @default(false)
+  
+  // Retry
+  attempt         Int      @default(1)
+  nextRetryAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  webhook         Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  
+  @@index([webhookId])
+  @@index([event])
+  @@index([success])
+  @@map("webhook_deliveries")
+}
+
+model ApiToken {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String
+  
+  // Token
+  name            String
+  token           String   @unique
+  lastUsedAt      DateTime?
+  lastUsedIp      String?
+  
+  // Permissões
+  permissions     String   // JSON array de permissões
+  
+  // Controle
+  expiresAt       DateTime?
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([token])
+  @@index([isActive])
+  @@map("api_tokens")
+}
+
+// WhatsApp
+model WhatsAppMessage {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Destinatário
+  phoneNumber     String
+  contactName     String?
+  
+  // Mensagem
+  template        String?  // Nome do template
+  content         String
+  type            String   @default("TEXT") // TEXT, IMAGE, DOCUMENT, TEMPLATE
+  
+  // Mídia
+  mediaUrl        String?
+  mediaType       String?
+  
+  // Status
+  status          String   @default("PENDING") // PENDING, SENT, DELIVERED, READ, FAILED
+  messageId       String?
+  errorMessage    String?
+  
+  // Timestamps
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([phoneNumber])
+  @@map("whatsapp_messages")
+}
+
+// Email
+model EmailMessage {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Destinatários
+  toEmail         String
+  ccEmail         String?
+  bccEmail        String?
+  
+  // Conteúdo
+  subject         String
+  body            String
+  htmlBody        String?
+  template        String?
+  
+  // Anexos
+  attachments     String?  // JSON array
+  
+  // Status
+  status          String   @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, FAILED
+  errorMessage    String?
+  
+  // Timestamps
+  scheduledFor    DateTime?
+  sentAt          DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([status])
+  @@index([toEmail])
+  @@map("email_messages")
+}
+
+// Google Calendar
+model CalendarEvent {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Evento
+  title           String
+  description     String?
+  type            String   @default("INTERNAL") // INSTALLATION, TECHNICAL, COMMERCIAL, INTERNAL, REMINDER
+  
+  // Datas
+  startDate       DateTime
+  endDate         DateTime
+  timezone        String   @default("America/Sao_Paulo")
+  
+  // Participantes
+  attendees       String?  // JSON array
+  organizer       String?
+  
+  // Sincronização
+  googleEventId   String?
+  syncedAt        DateTime?
+  
+  // Status
+  status          String   @default("ACTIVE") // ACTIVE, CANCELLED, COMPLETED
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([startDate])
+  @@index([type])
+  @@map("calendar_events")
+}
+
+// Google Drive
+model StorageFile {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Arquivo
+  name            String
+  type            String   // CONTRACT, WORK_PHOTO, XML, PDF, ATTACHMENT
+  mimeType        String
+  size            Int
+  
+  // Links
+  fileUrl         String?
+  googleDriveId   String?
+  
+  // Organização
+  folderPath      String?  // Caminho virtual ex: "Obra-123/Fotos"
+  workId          String?  // Referência para obra
+  
+  // Metadados
+  uploadedBy      String?
+  metadata        String?  // JSON
+  
+  // Controle
+  isArchived      Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([type])
+  @@index([workId])
+  @@map("storage_files")
+}
+
+// Banking APIs
+model BankTransaction {
+  id              String   @id @default(cuid())
+  companyId       String
+  
+  // Transação Bancária
+  bankCode        String
+  accountNumber   String
+  transactionId   String   // ID externo do banco
+  
+  // Valores
+  amount          Decimal
+  type            String   // DEBIT, CREDIT
+  currency        String   @default("BRL")
+  
+  // Informações
+  description     String
+  counterparty    String?  // Outra parte
+  referenceCode   String?
+  
+  // Timestamps
+  transactionDate DateTime
+  valueDate       DateTime?
+  
+  // Sincronização
+  syncedAt        DateTime?
+  source          String   @default("MANUAL") // MANUAL, PIX, BOLETO, TRANSFER, API
+  
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@unique([companyId, transactionId])
+  @@index([companyId])
+  @@index([transactionDate])
+  @@map("bank_transactions")
 }
