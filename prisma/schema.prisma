@@ -52,6 +52,7 @@ model Company {
   emailMessages          EmailMessage[]
   calendarEvents         CalendarEvent[]
   storageFiles           StorageFile[]
+  transactions           Transaction[]
   bankTransactions       BankTransaction[]
   aiConversations        AIConversation[]
   aiPrompts              AIPredefinedPrompt[]
@@ -2077,6 +2078,62 @@ model StorageFile {
   @@map("storage_files")
 }
 
+// ═══════════════════════════════════════════════════════════════
+// FINANCIAL - TRANSACTIONS (Receitas e Despesas)
+// ═══════════════════════════════════════════════════════════════
+
+model Transaction {
+  id        String @id @default(cuid())
+  companyId String
+
+  // Tipo e Status
+  type   TransactionType // INCOME ou EXPENSE
+  status TransactionStatus @default(PENDING)
+
+  // Informações Básicas
+  description String
+  reference   String?
+
+  // Valores
+  amount   Decimal
+  currency String  @default("BRL")
+
+  // Datas
+  transactionDate DateTime
+  dueDate         DateTime?
+  paidDate        DateTime?
+
+  // Contexto (opcional - pode estar ligado a projeto, cliente, fornecedor)
+  projectId  String?
+  clientId   String?
+  supplierId String?
+  employeeId String?
+
+  // Método de Pagamento
+  paymentMethod PaymentMethod?
+  bankAccountId String?
+
+  // Observações
+  notes       String?
+  attachments String? // JSON array de URLs
+
+  // Auditoria
+  createdBy String?
+  updatedBy String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([type])
+  @@index([status])
+  @@index([transactionDate])
+  @@index([dueDate])
+  @@map("transactions")
+}
+
 // Banking APIs
 model BankTransaction {
   id        String @id @default(cuid())
@@ -2511,7 +2568,7 @@ model AuditRetentionPolicy {
 
 // ═══════════════════════════════════════════════════════════════
 // BACKUP E RESTAURAÇÃO
-// ═══════════════════════════════════════════════════════════════
+// ════════════════════════════════════��══════════════════════════
 
 enum BackupFrequency {
   MANUAL
