@@ -67,6 +67,7 @@ model Company {
   backupConfig    BackupConfiguration?
   backups         Backup[]
   backupLogs      BackupLog[]
+  notifications   Notification[]
 
   @@index([plan])
   @@index([status])
@@ -238,7 +239,7 @@ model ClientAddress {
 
 // ═══════════════════════════════════════════════════════════════
 // FORNECEDORES
-// ════════════════════════════════════════════════════════��══════
+// ═══════════════════════��════════════════════════════════��══════
 
 model Supplier {
   id              String   @id @default(cuid())
@@ -694,7 +695,7 @@ model WorkAttachment {
 
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ═══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════��══════
 // ORÇAMENTOS / COTAÇÕES
 // ════════════════���══════════════��═══════��══════════��════════════
 
@@ -2661,4 +2662,61 @@ model BackupLog {
   @@index([backupId])
   @@index([createdAt])
   @@map("backup_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICAÇÕES - SISTEMA DE NOTIFICAÇÕES EM TEMPO REAL
+// ═══════════════════════════════════════════════════════════════
+
+enum NotificationType {
+  FINANCIAL
+  WORKS
+  SERVICE_ORDER
+  SCHEDULE
+  QUOTE
+  SYSTEM
+  USERS
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String?
+  
+  // Conteúdo
+  title           String
+  description     String?
+  type            NotificationType
+  priority        NotificationPriority @default(NORMAL)
+  
+  // Status
+  read            Boolean  @default(false)
+  readAt          DateTime?
+  
+  // Contexto
+  relatedEntity   String?  // cliente, obra, os, etc
+  relatedId       String?
+  
+  // Action
+  actionUrl       String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@index([companyId, userId, read])
+  @@map("notifications")
 }
