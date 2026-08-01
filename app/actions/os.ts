@@ -1,10 +1,10 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { OSService } from '@/lib/services/os-service'
-import { CreateOSSchema, UpdateOSSchema, CreateOSProductSchema, CreateProductionStageSchema, UpdateProductionStageSchema, CreateInstallationSchema, CreateCommentSchema, OSListFiltersSchema, BulkChangeStatusSchema, DuplicateOSSchema } from '@/lib/schemas/os'
-import type { CreateOSInput, UpdateOSInput, CreateOSProductInput, CreateProductionStageInput, UpdateProductionStageInput, CreateInstallationInput, CreateCommentInput, OSListFiltersInput, BulkChangeStatusInput, DuplicateOSInput } from '@/types/os'
-import { Decimal } from '@prisma/client/runtime/library'
+import { OSService } from '@/src/lib/services/os-service'
+import { CreateOSSchema, UpdateOSSchema, CreateOSProductSchema, CreateProductionStageSchema, UpdateProductionStageSchema, CreateInstallationSchema, CreateCommentSchema, OSListFiltersSchema, BulkChangeStatusSchema, DuplicateOSSchema } from '@/src/lib/schemas/os'
+import type { CreateOSInput, UpdateOSInput, CreateOSProductInput, CreateProductionStageInput, UpdateProductionStageInput, CreateInstallationInput, CreateCommentInput, OSListFiltersInput, BulkChangeStatusInput, DuplicateOSInput } from '@/src/types/os'
+import { Decimal } from 'decimal.js'
 
 // CRUD Operations
 export async function createServiceOrder(companyId: string, input: unknown) {

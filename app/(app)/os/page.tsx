@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OSTable } from '@/components/os/os-table'
 import { listServiceOrders } from '@/app/actions/os'
-import type { ServiceOrderStatus } from '@/types/os'
+import type { ServiceOrderStatus } from '@/src/types/os'
 import { Search, Plus } from 'lucide-react'
 
 // TODO: Get from auth context

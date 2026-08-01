@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CreateOSSchema } from '@/lib/schemas/os'
+import { CreateOSSchema } from '@/src/lib/schemas/os'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { createServiceOrder } from '@/app/actions/os'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import type { ServiceOrderPriority } from '@/types/os'
+import type { ServiceOrderPriority } from '@/src/types/os'
 
 interface OSFormProps {
   companyId: string

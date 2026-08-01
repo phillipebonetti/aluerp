@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CreateOSProductSchema } from '@/lib/schemas/os'
+import { CreateOSProductSchema } from '@/src/lib/schemas/os'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { addOSProduct, deleteOSProduct } from '@/app/actions/os'
-import { formatCurrency } from '@/lib/utils'
-import type { OSProduct } from '@/types/os'
+import { formatCurrency } from '@/src/lib/utils'
+import type { OSProduct } from '@/src/types/os'
 import { Trash2 } from 'lucide-react'
 
 interface OSProductsTabProps {

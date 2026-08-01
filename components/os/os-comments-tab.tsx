@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CreateCommentSchema } from '@/lib/schemas/os'
+import { CreateCommentSchema } from '@/src/lib/schemas/os'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Badge } from '@/components/ui/badge'
 import { addOSComment } from '@/app/actions/os'
-import { formatDate } from '@/lib/utils'
-import type { OSCommentRecord } from '@/types/os'
+import { formatDate } from '@/src/lib/utils'
+import type { OSCommentRecord } from '@/src/types/os'
 import { MessageSquare, CheckCircle, AlertCircle, Paperclip } from 'lucide-react'
 
 interface OSCommentsTabProps {

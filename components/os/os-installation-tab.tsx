@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CreateInstallationSchema } from '@/lib/schemas/os'
+import { CreateInstallationSchema } from '@/src/lib/schemas/os'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Card } from '@/components/ui/card'
 import { addInstallation, updateInstallation } from '@/app/actions/os'
-import { formatDate } from '@/lib/utils'
-import type { OSInstallation } from '@/types/os'
+import { formatDate } from '@/src/lib/utils'
+import type { OSInstallation } from '@/src/types/os'
 import { Calendar, MapPin, Phone, User } from 'lucide-react'
 
 interface OSInstallationTabProps {

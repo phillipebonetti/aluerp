@@ -10,8 +10,8 @@ import { OSProductionTab } from '@/components/os/os-production-tab'
 import { OSInstallationTab } from '@/components/os/os-installation-tab'
 import { OSCommentsTab } from '@/components/os/os-comments-tab'
 import { getServiceOrder, changeServiceOrderStatus } from '@/app/actions/os'
-import { formatDate, formatCurrency } from '@/lib/utils'
-import type { ServiceOrderStatus } from '@/types/os'
+import { formatDate, formatCurrency } from '@/src/lib/utils'
+import type { ServiceOrderStatus } from '@/src/types/os'
 import { ArrowLeft, MoreVertical } from 'lucide-react'
 import {
   DropdownMenu,

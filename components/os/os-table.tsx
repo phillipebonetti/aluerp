@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { formatDate, formatCurrency } from '@/lib/utils'
-import type { ServiceOrderStatus } from '@/types/os'
+import { formatDate, formatCurrency } from '@/src/lib/utils'
+import type { ServiceOrderStatus } from '@/src/types/os'
 
 interface OSTableProps {
   data: any[]
