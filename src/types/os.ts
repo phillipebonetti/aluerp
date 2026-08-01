@@ -3,8 +3,11 @@
  * Consolidação centralizada de tipos relacionados a gestão de OS (Service Orders)
  */
 
-export type ServiceOrderStatus = 'DRAFT' | 'SCHEDULED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
-export type ServiceOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+export type ServiceOrderStatus = 'DRAFT' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED'
+export type ServiceOrderPriority = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE'
+export type ProductionStageStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
+export type OSCommentType = 'COMMENT' | 'STATUS_CHANGE' | 'NOTE' | 'ATTACHMENT_ADDED'
+export type AttachmentCategory = 'PHOTO' | 'DOCUMENT' | 'DRAWING' | 'VIDEO'
 
 export interface ServiceOrder {
   id: string
@@ -148,6 +151,116 @@ export interface ServiceOrderCompletion {
   rating?: number
 }
 
+// Novos tipos para modelos auxiliares de OS
+export interface OSProduct {
+  id: string
+  serviceOrderId: string
+  sequence: number
+  description: string
+  quantity: number
+  width?: number
+  height?: number
+  area?: number
+  unitValue: number
+  totalValue: number
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OSProductionStage {
+  id: string
+  serviceOrderId: string
+  sequence: number
+  name: string
+  status: ProductionStageStatus
+  responsibleId?: string
+  startDate?: Date
+  endDate?: Date
+  actualEndDate?: Date
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+  responsible?: {
+    id: string
+    name: string
+  }
+}
+
+export interface OSInstallation {
+  id: string
+  serviceOrderId: string
+  sequence: number
+  teamLeadId?: string
+  scheduledDate?: Date
+  startDate?: Date
+  endDate?: Date
+  actualEndDate?: Date
+  address?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  contactName?: string
+  contactPhone?: string
+  notes?: string
+  createdAt: Date
+  updatedAt: Date
+  teamLead?: {
+    id: string
+    name: string
+  }
+}
+
+export interface OSCommentRecord {
+  id: string
+  serviceOrderId: string
+  authorId: string
+  type: OSCommentType
+  content: string
+  createdAt: Date
+  updatedAt: Date
+  author?: {
+    id: string
+    name: string
+  }
+}
+
+export interface OSAttachmentRecord {
+  id: string
+  serviceOrderId: string
+  fileName: string
+  fileUrl: string
+  fileType?: string
+  fileSize?: number
+  uploadedBy: string
+  category?: AttachmentCategory
+  createdAt: Date
+}
+
+export interface OSDashboardMetrics {
+  totalOS: number
+  osEmProducao: number
+  osEmInstalacao: number
+  osConcluidas: number
+  osAtrasadas: number
+  valorEmProducao: number
+  valorEmInstalacao: number
+}
+
+export interface OSListFilters {
+  clientId?: string
+  vendedorId?: string
+  status?: ServiceOrderStatus
+  priority?: ServiceOrderPriority
+  dateFrom?: Date
+  dateTo?: Date
+  searchTerm?: string
+  skip?: number
+  take?: number
+  sortBy?: 'number' | 'createdAt' | 'scheduledDate' | 'totalValue'
+  sortOrder?: 'asc' | 'desc'
+}
+
 export type OSWorkflow = {
   draft: {
     next: ['SCHEDULED', 'CANCELLED']
@@ -156,15 +269,15 @@ export type OSWorkflow = {
     next: ['IN_PROGRESS', 'CANCELLED']
   }
   in_progress: {
-    next: ['COMPLETED', 'PAUSED', 'CANCELLED']
-  }
-  paused: {
-    next: ['IN_PROGRESS', 'CANCELLED']
+    next: ['COMPLETED', 'CANCELLED']
   }
   completed: {
-    next: []
+    next: ['ARCHIVED']
   }
   cancelled: {
+    next: []
+  }
+  archived: {
     next: []
   }
 }
