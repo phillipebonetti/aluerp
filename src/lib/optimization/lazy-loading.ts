@@ -114,7 +114,9 @@ export class ResourcePreloader {
     try {
       await Promise.all(
         endpoints.map((endpoint) =>
-          fetch(endpoint, { priority: 'high' as any }).catch(() => {
+          fetch(endpoint, { 
+            headers: { 'X-Priority': 'high' }
+          }).catch(() => {
             // Falha silenciosa em preload
           })
         )
