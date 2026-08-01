@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -168,25 +169,26 @@ export default function IntegrationsDashboardPage() {
             {INTEGRATION_PROVIDERS.map(({ provider, name }) => {
               const integration = getIntegration(provider)
               return (
-                <IntegrationCard
-                  key={provider}
-                  id={integration?.id || ''}
-                  provider={provider}
-                  name={name}
-                  status={integration?.status || 'DISCONNECTED'}
-                  lastSync={integration?.lastSync}
-                  lastError={integration?.lastError}
-                  isActive={integration?.isActive || false}
-                  onConfigure={() => console.log('Configure', provider)}
-                  onTest={() => handleTest(provider)}
-                  onSync={() => handleSync(provider)}
-                  onToggle={() => 
-                    integration?.isActive 
-                      ? handleDisconnect(provider)
-                      : console.log('Connect', provider)
-                  }
-                  loading={actionLoading?.includes(provider) || loading}
-                />
+                <Link key={provider} href={`/configuracoes/integracoes/${integration?.id || 'new'}`}>
+                  <IntegrationCard
+                    id={integration?.id || ''}
+                    provider={provider}
+                    name={name}
+                    status={integration?.status || 'DISCONNECTED'}
+                    lastSync={integration?.lastSync}
+                    lastError={integration?.lastError}
+                    isActive={integration?.isActive || false}
+                    onConfigure={() => console.log('Configure', provider)}
+                    onTest={() => handleTest(provider)}
+                    onSync={() => handleSync(provider)}
+                    onToggle={() => 
+                      integration?.isActive 
+                        ? handleDisconnect(provider)
+                        : console.log('Connect', provider)
+                    }
+                    loading={actionLoading?.includes(provider) || loading}
+                  />
+                </Link>
               )
             })}
           </div>
