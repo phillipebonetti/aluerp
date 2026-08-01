@@ -63,6 +63,7 @@ model Company {
   aiProviderConfig AIProviderConfig?
   aiUsageLogs     AIUsageLog[]
   auditLogs       AuditLog[]
+  auditRetentionPolicy AuditRetentionPolicy?
 
   @@index([plan])
   @@index([status])
@@ -692,7 +693,7 @@ model WorkAttachment {
 // ORÇAMENTOS / COTAÇÕES
 // ═══════════════════════════════════════════════════════════════
 // ORÇAMENTOS / COTAÇÕES
-// ═══════════════════════════════════════��══════════��════════════
+// ═══════════════════════════════��═══════��══════════��════════════
 
 model Quote {
   id              String   @id @default(cuid())
@@ -797,153 +798,6 @@ model ServiceOrder {
   @@index([projectId])
   @@index([status])
   @@map("service_orders")
-}
-
-// ═══════════════════════════════════════════════════════════════
-// FINANCEIRO
-// ═══════════════════════════════════════════════════════════════
-
-model BankAccount {
-  id              String   @id @default(cuid())
-  companyId       String
-  bankName        String
-  accountNumber   String
-  accountType     String
-  balance         Decimal  @db.Decimal(14, 2) @default(0)
-  status          BankAccountStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
-
-  @@index([companyId])
-  @@map("bank_accounts")
-}
-
-model CostCenter {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  description     String?
-  status          CostCenterStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
-
-  @@unique([companyId, name])
-  @@index([companyId])
-  @@map("cost_centers")
-}
-
-model ExpenseCategory {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
-
-  @@unique([companyId, name])
-  @@index([companyId])
-  @@map("expense_categories")
-}
-
-model IncomeCategory {
-  id              String   @id @default(cuid())
-  companyId       String
-  name            String
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
-
-  @@unique([companyId, name])
-  @@index([companyId])
-  @@map("income_categories")
-}
-
-model Transaction {
-  id              String   @id @default(cuid())
-  companyId       String
-  type            TransactionType
-  category        String?
-  amount          Decimal  @db.Decimal(14, 2)
-  description     String
-  status          TransactionStatus @default(PENDING)
-  paymentMethod   PaymentMethod
-  dueDate         DateTime?
-  paymentDate     DateTime?
-  notes           String?
-  supplierId      String?
-  clientId        String?
-  projectId       String?
-  salespersonId   String?
-  bankAccountId   String?
-  costCenterId    String?
-  expenseCategoryId String?
-  incomeCategoryId  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relações
-  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  client          Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  project         Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  salesperson     Employee? @relation(fields: [salespersonId], references: [id], onDelete: SetNull)
-  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
-  costCenter      CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
-  expenseCategory ExpenseCategory? @relation(fields: [expenseCategoryId], references: [id], onDelete: SetNull)
-  incomeCategory  IncomeCategory? @relation(fields: [incomeCategoryId], references: [id], onDelete: SetNull)
-
-  @@index([companyId])
-  @@index([type])
-  @@index([status])
-  @@index([dueDate])
-  @@index([paymentDate])
-  @@index([clientId])
-  @@index([projectId])
-  @@index([salespersonId])
-  @@index([companyId, status, dueDate])
-  @@index([companyId, type, paymentDate])
-  @@index([companyId, clientId])
-  @@index([companyId, projectId])
-  @@index([companyId, salespersonId])
-  @@map("transactions")
-}
-
-// ═══════════��══════════════════════���════════════════════════════
-// AUDITORIA
-// ═══════════�����══════════���══���════════════════════════════════════
-
-model AuditLog {
-  id              String   @id @default(cuid())
-  userId          String
-  action          String
-  resource        String
-  resourceId      String
-  changes         String?  // JSON serializado
-  ipAddress       String?
-  createdAt       DateTime @default(now())
-
-  // Relações
-  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([resource])
-  @@index([createdAt])
-  @@map("audit_logs")
 }
 
 // Configurações da Empresa
@@ -2648,5 +2502,29 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@index([companyId, entity, entityId])
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
   @@map("audit_logs")
+}
+
+// Configuração de Retenção de Logs de Auditoria
+model AuditRetentionPolicy {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  
+  // Política de retenção
+  retentionDays   Int      @default(365) // 90, 180, 365, -1 (nunca)
+  autoDelete      Boolean  @default(true)
+  lastCleanupAt   DateTime?
+  
+  // Notificações
+  notifyDaysBeforeDelete Int @default(7)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("audit_retention_policies")
 }
