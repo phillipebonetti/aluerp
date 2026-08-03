@@ -91,6 +91,9 @@ model Company {
   cashMovements          CashMovement[] // GO LIVE 3
   financialForecasts     FinancialForecast[] // GO LIVE 3
   financialAlerts        FinancialAlert[] // GO LIVE 3
+  accountsReceivable     AccountsReceivable[] // GO LIVE 4
+  receivablePayments     ReceivablePayment[] // GO LIVE 4
+  receivableHistories    ReceivableHistory[] // GO LIVE 4
 
   @@index([plan])
   @@index([status])
@@ -218,14 +221,15 @@ model Client {
   deletedAt    DateTime?
 
   // Relações
-  contacts      ClientContact[]
-  addresses     ClientAddress[]
-  quotes        Quote[]
-  projects      Project[]
-  opportunities Opportunity[]
-  serviceOrders ServiceOrder[]
-  company       Company         @relation(fields: [companyId], references: [id])
-  postSales     PostSale[]
+  contacts           ClientContact[]
+  addresses          ClientAddress[]
+  quotes             Quote[]
+  projects           Project[]
+  opportunities      Opportunity[]
+  serviceOrders      ServiceOrder[]
+  accountsReceivable AccountsReceivable[] // GO LIVE 4
+  company            Company              @relation(fields: [companyId], references: [id])
+  postSales          PostSale[]
 
   @@index([companyId])
   @@index([document])
@@ -719,7 +723,7 @@ model WorkAttachment {
 // ORÇAMENTOS / COTAÇÕES
 // ════════════════════════════════════════════���═══════════��══════
 // ORÇAMENTOS / COTAÇÕES
-// ════════════════���══════════════��═══════��══════════��════════════
+// ════════════════�����══════════════��═══════��══════════��════════════
 
 model Quote {
   id                    String      @id @default(cuid())
@@ -741,13 +745,14 @@ model Quote {
   deletedAt             DateTime?
 
   // Relações
-  client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  salesperson   Employee?      @relation(fields: [salespersonId], references: [id], onDelete: SetNull)
-  items         QuoteItem[]
-  versions      QuoteVersion[]
-  serviceOrders ServiceOrder[]
-  company       Company        @relation(fields: [companyId], references: [id])
+  client             Client               @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  project            Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  salesperson        Employee?            @relation(fields: [salespersonId], references: [id], onDelete: SetNull)
+  items              QuoteItem[]
+  versions           QuoteVersion[]
+  serviceOrders      ServiceOrder[]
+  accountsReceivable AccountsReceivable[] // GO LIVE 4
+  company            Company              @relation(fields: [companyId], references: [id])
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -832,18 +837,19 @@ model ServiceOrder {
   deletedAt DateTime?
 
   // Relações
-  company          Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  project          Project             @relation(fields: [projectId], references: [id], onDelete: Restrict)
-  quote            Quote?              @relation(fields: [quoteId], references: [id], onDelete: SetNull)
-  client           Client              @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  vendedor         Employee?           @relation("ServiceOrderVendedor", fields: [vendedorId], references: [id], onDelete: SetNull)
-  products         OSProduct[]
-  productionStages OSProductionStage[]
-  installations    OSInstallation[]
-  comments         OSComment[]
-  attachments      OSAttachment[]
-  materials        OSMaterial[]
-  commissions      OSCommission[]
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  project            Project              @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  quote              Quote?               @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  client             Client               @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  vendedor           Employee?            @relation("ServiceOrderVendedor", fields: [vendedorId], references: [id], onDelete: SetNull)
+  products           OSProduct[]
+  productionStages   OSProductionStage[]
+  installations      OSInstallation[]
+  comments           OSComment[]
+  attachments        OSAttachment[]
+  materials          OSMaterial[]
+  commissions        OSCommission[]
+  accountsReceivable AccountsReceivable[] // GO LIVE 4
 
   @@unique([companyId, number])
   @@index([companyId])
@@ -1664,7 +1670,7 @@ model NotificationSettings {
   @@map("notification_settings")
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ══════════════��════════════════════════════════════════════════
 // ENUMS
 // ═══════════════════════════════════════════════════════════════
 
@@ -2923,7 +2929,7 @@ model AuditRetentionPolicy {
 
 // ═══════════════════════════════════════════════════════════════
 // BACKUP E RESTAURAÇÃO
-// ════════════════════════════════════��══════════════════════════
+// ═════════════════════════════════���══��══════════════════════════
 
 enum BackupFrequency {
   MANUAL
@@ -3597,9 +3603,10 @@ model FinancialAccount {
   updatedAt      DateTime @updatedAt
 
   // Relações
-  company   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  movements CashMovement[]
-  forecasts FinancialForecast[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements          CashMovement[]
+  forecasts          FinancialForecast[]
+  receivablePayments ReceivablePayment[] // GO LIVE 4
 
   @@index([companyId])
   @@index([isActive])
@@ -3637,8 +3644,9 @@ model CostCenter {
   updatedAt            DateTime @updatedAt
 
   // Relações
-  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  movements CashMovement[]
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements          CashMovement[]
+  accountsReceivable AccountsReceivable[] // GO LIVE 4
 
   @@index([companyId])
   @@index([isActive])
@@ -3746,4 +3754,181 @@ model FinancialAlert {
   @@index([severity])
   @@index([isResolved])
   @@map("financial_alerts")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GO LIVE 4 — CONTAS A RECEBER (ACCOUNTS RECEIVABLE)
+// ═══════════════════════════════════════════════════════════════
+
+// Conta a Receber Principal
+model AccountsReceivable {
+  id             String  @id @default(cuid())
+  companyId      String
+  clientId       String
+  quoteId        String?
+  serviceOrderId String?
+
+  // Identificação
+  documentNumber String // Número do documento
+  type           String  @default("VENDA") // VENDA, SERVIÇO, MANUAL
+  category       String  @default("OUTRO") // OUTRO, ALUGUEL, COMISSÃO, ETC
+  costCenterId   String?
+
+  // Valores
+  totalValue    Decimal @db.Decimal(15, 2)
+  receivedValue Decimal @default(0) @db.Decimal(15, 2)
+  discountValue Decimal @default(0) @db.Decimal(15, 2)
+  finalBalance  Decimal @db.Decimal(15, 2) // Calculated: totalValue - receivedValue - discountValue
+
+  // Status
+  status String @default("ABERTO") // ABERTO, PARCIALMENTE_RECEBIDO, RECEBIDO, VENCIDO, CANCELADO
+
+  // Datas
+  issueDate    DateTime  @default(now())
+  dueDate      DateTime
+  receivedDate DateTime?
+
+  // Observações
+  notes String?
+
+  // Auditoria
+  createdBy  String?
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  // Relações
+  company      Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client       Client                  @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  quote        Quote?                  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  serviceOrder ServiceOrder?           @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  costCenter   CostCenter?             @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  installments ReceivableInstallment[]
+  payments     ReceivablePayment[]
+  histories    ReceivableHistory[]
+
+  @@unique([companyId, documentNumber])
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([issueDate])
+  @@map("accounts_receivable")
+}
+
+// Parcelas da Conta a Receber
+model ReceivableInstallment {
+  id                   String @id @default(cuid())
+  accountsReceivableId String
+
+  // Identificação
+  installmentNumber Int // 1, 2, 3...
+
+  // Valores
+  value         Decimal @db.Decimal(15, 2)
+  receivedValue Decimal @default(0) @db.Decimal(15, 2)
+
+  // Status
+  status String @default("ABERTO") // ABERTO, PARCIALMENTE_RECEBIDO, RECEBIDO, VENCIDO, CANCELADO
+
+  // Data
+  dueDate      DateTime
+  receivedDate DateTime?
+
+  // Forma de pagamento
+  paymentMethod String? // PIX, BOLETO, TRANSFERENCIA, CHEQUE, DINHEIRO, ETC
+
+  // Auditoria
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  accountsReceivable AccountsReceivable  @relation(fields: [accountsReceivableId], references: [id], onDelete: Cascade)
+  payments           ReceivablePayment[]
+
+  @@index([accountsReceivableId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("receivable_installments")
+}
+
+// Recebimentos Registrados
+model ReceivablePayment {
+  id                   String  @id @default(cuid())
+  accountsReceivableId String
+  installmentId        String?
+  companyId            String
+
+  // Identificação
+  paymentReference String? // Número do boleto, PIX, cheque, etc
+
+  // Valores
+  amount Decimal @db.Decimal(15, 2)
+
+  // Forma de pagamento
+  paymentMethod      String // PIX, BOLETO, TRANSFERENCIA, CHEQUE, DINHEIRO
+  financialAccountId String? // Conta bancária para depósito
+
+  // Datas
+  paymentDate DateTime
+  recordedAt  DateTime @default(now())
+
+  // Status
+  status String @default("CONFIRMADO") // PENDENTE, CONFIRMADO, CANCELADO
+
+  // Auditoria
+  createdBy   String
+  cancelledBy String?
+  cancelledAt DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  accountsReceivable AccountsReceivable     @relation(fields: [accountsReceivableId], references: [id], onDelete: Cascade)
+  installment        ReceivableInstallment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  company            Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialAccount   FinancialAccount?      @relation(fields: [financialAccountId], references: [id], onDelete: SetNull)
+  histories          ReceivableHistory[]
+
+  @@index([accountsReceivableId])
+  @@index([installmentId])
+  @@index([companyId])
+  @@index([paymentDate])
+  @@map("receivable_payments")
+}
+
+// Histórico e Auditoria de Contas a Receber
+model ReceivableHistory {
+  id                   String  @id @default(cuid())
+  accountsReceivableId String
+  paymentId            String?
+  companyId            String
+
+  // Tipo de evento
+  eventType   String // CREATED, MODIFIED, PAYMENT_RECEIVED, PAYMENT_REVERSED, OVERDUE, CANCELLED, STATUS_CHANGED
+  description String
+
+  // Valores para comparação
+  previousValue Decimal? @db.Decimal(15, 2)
+  newValue      Decimal? @db.Decimal(15, 2)
+
+  // Auditoria
+  createdBy String?
+  metadata  String? // JSON com dados adicionais
+  createdAt DateTime @default(now())
+
+  // Relações
+  accountsReceivable AccountsReceivable @relation(fields: [accountsReceivableId], references: [id], onDelete: Cascade)
+  payment            ReceivablePayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  company            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([accountsReceivableId])
+  @@index([companyId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("receivable_histories")
 }
