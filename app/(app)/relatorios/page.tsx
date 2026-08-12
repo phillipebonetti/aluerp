@@ -8,7 +8,6 @@ import { KPICard } from '@/components/reports/kpi-card'
 import { ReportFilters } from '@/components/reports/report-filters'
 import { getKPIsAction, getCashFlowAction, getCommercialMetricsAction, getTopSellersAction } from '@/src/actions/reports'
 import { BarChart3, FileText, TrendingUp, DollarSign, Users, HardHat, Download, Share2 } from 'lucide-react'
-import { useSession } from '@/src/core/auth'
 
 const reportCards = [
   {
@@ -44,7 +43,6 @@ const reportCards = [
 ]
 
 export default function RelatoriosPage() {
-  const session = useSession()
   const [kpis, setKpis] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 

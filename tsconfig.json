@@ -26,8 +26,20 @@
       "@/*": [
         "./*"
       ],
+      "@/repositories": [
+        "./src/repositories/index.ts"
+      ],
+      "@/lib/storage": [
+        "./src/lib/storage/index.ts"
+      ],
       "@/src/*": [
         "./src/*"
+      ],
+      "@/src/lib/prisma": [
+        "./lib/prisma.ts"
+      ],
+      "@/src/utils/format": [
+        "./src/utils/formatters.ts"
       ],
       "@/core/*": [
         "./src/core/*"
@@ -36,7 +48,7 @@
         "./src/modules/*"
       ],
       "@/lib/*": [
-        "./src/lib/*"
+        "./lib/*"
       ],
       "@/hooks/*": [
         "./src/hooks/*"
