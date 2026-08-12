@@ -114,25 +114,31 @@ export function Header({ onMenuClick, user, company }: HeaderProps) {
             }
           />
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium">{displayName}</span>
-                <span className="text-xs text-muted-foreground font-normal">{displayEmail}</span>
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">{displayName}</span>
+                  <span className="text-xs text-muted-foreground font-normal">{displayEmail}</span>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-sm">Meu Perfil</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Configurações</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Plano e Faturamento</DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem className="text-sm">Meu Perfil</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">Configurações</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">Plano e Faturamento</DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              className="text-sm"
-              onClick={handleLogout}
-              disabled={isPending}
-            >
-              {isPending ? 'Saindo...' : 'Sair'}
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                variant="destructive"
+                className="text-sm"
+                onClick={handleLogout}
+                disabled={isPending}
+              >
+                {isPending ? 'Saindo...' : 'Sair'}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

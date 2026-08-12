@@ -14,10 +14,6 @@ import {
 } from '@/src/actions/permissions'
 import { Permission } from '@/components/auth/Permission'
 
-export const metadata = {
-  title: 'Gerenciar Permissões',
-  description: 'Configurar papéis e permissões do sistema',
-}
 
 export default function PermissionsPage() {
   const [companyId] = useState('') // Get from session

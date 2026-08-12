@@ -1,6 +1,7 @@
 'use server'
 
-import { validatePasswordStrength, createPasswordResetToken } from '@/src/actions/security'
+import { createPasswordResetToken } from '@/src/actions/security'
+import { validatePasswordStrength } from '@/src/lib/password-validation'
 import { createAuditLog } from '@/src/lib/audit-service'
 
 /**

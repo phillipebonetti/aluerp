@@ -8,10 +8,6 @@ import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { getUserSessions, revokeSession, revokeAllSessions } from '@/src/actions/security'
 
-export const metadata = {
-  title: 'Minhas Sessões',
-  description: 'Gerenciar suas sessões ativas',
-}
 
 function getDeviceIcon(deviceName?: string) {
   if (!deviceName) return '📱'

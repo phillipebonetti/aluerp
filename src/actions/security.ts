@@ -3,42 +3,7 @@
 import { prisma } from '@/src/core/database'
 import { createAuditLog, auditLogin } from '@/src/lib/audit-service'
 import crypto from 'crypto'
-
-/**
- * Validate password strength
- * - Minimum 8 characters
- * - At least one uppercase letter
- * - At least one lowercase letter
- * - At least one number
- * - At least one special character
- */
-export function validatePasswordStrength(password: string): {
-  valid: boolean
-  errors: string[]
-} {
-  const errors: string[] = []
-
-  if (password.length < 8) {
-    errors.push('Senha deve ter no mínimo 8 caracteres')
-  }
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Senha deve conter pelo menos uma letra maiúscula')
-  }
-  if (!/[a-z]/.test(password)) {
-    errors.push('Senha deve conter pelo menos uma letra minúscula')
-  }
-  if (!/[0-9]/.test(password)) {
-    errors.push('Senha deve conter pelo menos um número')
-  }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Senha deve conter pelo menos um caractere especial')
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-  }
-}
+import { validatePasswordStrength } from '@/src/lib/password-validation'
 
 /**
  * Check login attempts and enforce rate limiting

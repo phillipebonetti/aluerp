@@ -30,6 +30,13 @@ const PRIORITY_COLORS: Record<ServiceOrderPriority, string> = {
   URGENTE: 'bg-red-100 text-red-800 border-red-300',
 }
 
+const PRIORITY_LABELS: Record<ServiceOrderPriority, string> = {
+  BAIXA: 'Baixa',
+  NORMAL: 'Normal',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
+}
+
 export function OsKanban({ cards = [], onCardMove, onCardClick, onAddCard, isLoading }: OsKanbanProps) {
   const [draggedCard, setDraggedCard] = useState<OSKanbanCard | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -116,10 +123,7 @@ export function OsKanban({ cards = [], onCardMove, onCardClick, onAddCard, isLoa
 
                       <div className="flex items-center justify-between mb-2">
                         <Badge className={PRIORITY_COLORS[card.priority]}>
-                          {card.priority === 'BAIXA' ? 'Baixa'}
-                          {card.priority === 'NORMAL' ? 'Normal'}
-                          {card.priority === 'ALTA' ? 'Alta'}
-                          {card.priority === 'URGENTE' ? 'Urgente'}
+                          {PRIORITY_LABELS[card.priority]}
                         </Badge>
                       </div>
 
