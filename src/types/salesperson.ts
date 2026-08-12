@@ -1,4 +1,4 @@
-import type { Decimal } from '@prisma/client/runtime/library'
+import type { Decimal } from 'decimal.js'
 
 export type SalespersonStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'FIRED'
 

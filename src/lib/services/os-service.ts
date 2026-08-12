@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { ServiceOrderStatus, ServiceOrderPriority, OSListFilters } from '@/types/os'
-import { Decimal } from '@prisma/client/runtime/library'
+import { Decimal } from 'decimal.js'
 
 export class OSService {
   // Gerar próximo número de OS

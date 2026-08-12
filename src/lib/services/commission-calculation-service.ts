@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import type { Decimal } from '@prisma/client/runtime/library'
+import type { Decimal } from 'decimal.js'
 
 export class CommissionCalculationService {
   /**

@@ -3,4 +3,4 @@
  * Query builders, migrations helpers, etc.
  */
 
-export * from '@/src/core/database'
+export { prisma, prisma as db, getPrisma } from '@/lib/prisma'

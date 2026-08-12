@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Decimal } from '@prisma/client/runtime/library'
+import { Decimal } from 'decimal.js'
 import type { AccountsReceivable, ReceivableStatus } from '@/src/types/accounts-receivable'
 
 export class AccountsReceivableService {

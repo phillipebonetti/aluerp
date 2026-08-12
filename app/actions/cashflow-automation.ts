@@ -1,7 +1,7 @@
 'use server'
 
 import { CashFlowAutomationService } from '@/src/lib/services/cashflow-automation-service'
-import { Decimal } from '@prisma/client/runtime/library'
+import { Decimal } from 'decimal.js'
 
 export async function createMovementFromReceipt(
   companyId: string,
