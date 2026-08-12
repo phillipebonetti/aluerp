@@ -3,11 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export const metadata = {
-  title: 'Acesso Negado',
-  description: 'Você não tem permissão para acessar esta página',
-}
-
 export default function ForbiddenPage() {
   const router = useRouter()
 
