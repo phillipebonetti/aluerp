@@ -4,4 +4,4 @@
  */
 
 export { getPrisma } from './client'
-export { getPrisma as prisma } from './client'
+export { prisma } from '@/lib/prisma'

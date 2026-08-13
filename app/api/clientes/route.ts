@@ -31,6 +31,10 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      if (!process.env.DATABASE_URL) {
+        return ApiResponses.success({ data: [], total: 0, skip: 0, take: 10 }, 'Banco de dados não configurado; nenhum cliente disponível')
+      }
+
       // Validar query params
       const { searchParams } = new URL(req.url)
       const params = Object.fromEntries(searchParams)
@@ -78,6 +82,10 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      if (!process.env.DATABASE_URL) {
+        return ApiResponses.internalServerError('Banco de dados não configurado para criar clientes')
+      }
+
       const body = await req.json()
 
       const clientService = new ClientService()

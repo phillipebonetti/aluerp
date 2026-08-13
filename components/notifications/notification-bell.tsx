@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Bell, X } from 'lucide-react'
+import React, { useCallback, useState, useEffect } from 'react'
+import { Bell } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -25,14 +26,9 @@ export function NotificationBell({ userId, companyId, unreadCount = 0 }: Notific
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [count, setCount] = useState(unreadCount)
+  const router = useRouter()
 
-  useEffect(() => {
-    if (isOpen) {
-      loadNotifications()
-    }
-  }, [isOpen])
-
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
     setLoading(true)
     try {
       const result = await getUserNotificationsAction(userId, companyId, { limit: 5 })
@@ -42,7 +38,15 @@ export function NotificationBell({ userId, companyId, unreadCount = 0 }: Notific
     } finally {
       setLoading(false)
     }
-  }
+  }, [companyId, userId])
+
+  useEffect(() => {
+    // Opening the menu synchronizes its contents with the server.
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadNotifications()
+    }
+  }, [isOpen, loadNotifications])
 
   async function handleMarkAsRead(id: string) {
     await markAsReadAction(id)
@@ -111,8 +115,7 @@ export function NotificationBell({ userId, companyId, unreadCount = 0 }: Notific
             className="w-full"
             onClick={() => {
               setIsOpen(false)
-              // Navigate to notifications page
-              window.location.href = '/notificacoes'
+              router.push('/notificacoes')
             }}
           >
             Ver Todas as Notificações
