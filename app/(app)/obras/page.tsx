@@ -1,3 +1,5 @@
+'use client'
+
 import { HardHat } from 'lucide-react'
 import { EntityCrudPage } from '@/components/erp/entity-crud-page'
 

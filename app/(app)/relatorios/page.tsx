@@ -6,8 +6,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { KPICard } from '@/components/reports/kpi-card'
 import { ReportFilters } from '@/components/reports/report-filters'
-import { getKPIsAction, getCashFlowAction, getCommercialMetricsAction, getTopSellersAction } from '@/src/actions/reports'
+import { getKPIsAction } from '@/src/actions/reports'
+import { getCurrentCompanyIdAction } from '@/src/actions/integrations'
 import { BarChart3, FileText, TrendingUp, DollarSign, Users, HardHat, Download, Share2 } from 'lucide-react'
+
+type ReportKpis = {
+  totalRevenue: number
+  profit: number
+  marginPercentage: number
+  averageTicket: number
+  projectsInProgress: number
+  projectsCompleted: number
+  receivables: number
+  payables: number
+}
 
 const reportCards = [
   {
@@ -43,20 +55,24 @@ const reportCards = [
 ]
 
 export default function RelatoriosPage() {
-  const [kpis, setKpis] = useState<any>(null)
+  const [kpis, setKpis] = useState<ReportKpis | null>(null)
   const [loading, setLoading] = useState(true)
-
-  const companyId = 'temp-company-id' // Será obtido da sessão
+  const [companyId, setCompanyId] = useState<string | null>(null)
 
   useEffect(() => {
     const loadKPIs = async () => {
-      if (!companyId) return
+      const currentCompanyId = await getCurrentCompanyIdAction()
+      setCompanyId(currentCompanyId)
+      if (!currentCompanyId) {
+        setLoading(false)
+        return
+      }
 
       const now = new Date()
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
-      const result = await getKPIsAction(companyId, startDate, endDate)
+      const result = await getKPIsAction(currentCompanyId, startDate, endDate)
       if (result.success) {
         setKpis(result.data)
       }

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/src/core/database'
+import { getSession } from '@/src/core/auth'
 import { ApiResponses } from '../utils/response'
 
 export interface AuthenticatedRequest extends NextRequest {
@@ -23,7 +24,19 @@ export async function requireAuth(request: NextRequest) {
     // Extrair token do header Authorization
     const authHeader = request.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return ApiResponses.unauthorized('Token não fornecido')
+      const session = await getSession()
+      if (!session) return ApiResponses.unauthorized('Sessão não encontrada')
+
+      ;(request as AuthenticatedRequest).userId = session.user.id
+      ;(request as AuthenticatedRequest).user = {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        companyId: session.company.id,
+        role: session.company.role,
+        permissions: [],
+      }
+      return null
     }
 
     const token = authHeader.slice(7)

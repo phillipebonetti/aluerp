@@ -1,86 +1,46 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
+import { getPrisma } from '@/src/core/database/client'
 import type { CRMLead } from '../types'
 
-// Mock data - replace with actual database calls
-const mockLeads: CRMLead[] = [
-  {
-    id: '1',
-    name: 'João Silva',
-    email: 'joao@example.com',
-    phone: '(11) 98765-4321',
-    company: 'Tech Corp',
-    source: 'website',
-    status: 'novo',
-    value: 5000,
-    notes: 'Lead qualificado',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    companyId: 'comp-1'
-  },
-  {
-    id: '2',
-    name: 'Maria Santos',
-    email: 'maria@example.com',
-    phone: '(11) 97654-3210',
-    company: 'Digital Solutions',
-    source: 'referral',
-    status: 'em_contato',
-    value: 8000,
-    notes: 'Interessado em proposta',
-    createdAt: new Date('2024-01-20'),
-    updatedAt: new Date('2024-01-22'),
-    companyId: 'comp-1'
-  }
-]
+async function tenant(companyId?: string) {
+  const session = await getSession()
+  if (!session) throw new Error('Não autorizado')
+  if (companyId && companyId !== session.company.id) throw new Error('Empresa inválida')
+  const prisma = await getPrisma()
+  if (!prisma) throw new Error('Banco de dados indisponível')
+  return { prisma, companyId: session.company.id }
+}
 
 export async function getLeads(companyId: string): Promise<CRMLead[]> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database query
-  return mockLeads.filter(lead => lead.companyId === companyId)
+  const { prisma, companyId: tenantId } = await tenant(companyId)
+  return prisma.lead.findMany({ where: { companyId: tenantId }, orderBy: { createdAt: 'desc' } }) as Promise<CRMLead[]>
 }
 
 export async function getLeadById(id: string, companyId: string): Promise<CRMLead | null> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database query
-  return mockLeads.find(lead => lead.id === id && lead.companyId === companyId) || null
+  const { prisma, companyId: tenantId } = await tenant(companyId)
+  return prisma.lead.findFirst({ where: { id, companyId: tenantId } }) as Promise<CRMLead | null>
 }
 
-export async function createLead(data: Omit<CRMLead, 'id' | 'createdAt' | 'updatedAt'>): Promise<CRMLead> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database insert
-  const newLead: CRMLead = {
-    ...data,
-    id: `lead-${Date.now()}`,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-  
-  return newLead
+export async function createLead(data: Omit<CRMLead, 'id' | 'companyId' | 'createdAt' | 'updatedAt'> & { companyId?: string }): Promise<CRMLead> {
+  const { prisma, companyId } = await tenant(data.companyId)
+  const { companyId: _ignored, ...payload } = data
+  return prisma.lead.create({ data: { ...payload, companyId } as never }) as Promise<CRMLead>
 }
 
 export async function updateLead(id: string, data: Partial<CRMLead>): Promise<CRMLead | null> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database update
-  const lead = mockLeads.find(l => l.id === id)
-  if (!lead) return null
-  
-  return { ...lead, ...data, updatedAt: new Date() }
+  const { prisma, companyId } = await tenant()
+  const { id: _id, companyId: _companyId, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = data
+  const existing = await prisma.lead.findFirst({ where: { id, companyId } })
+  if (!existing) return null
+  return prisma.lead.update({ where: { id }, data: payload as never }) as Promise<CRMLead>
 }
 
 export async function deleteLead(id: string): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database delete
+  const { prisma, companyId } = await tenant()
+  const existing = await prisma.lead.findFirst({ where: { id, companyId } })
+  if (!existing) return false
+  await prisma.lead.delete({ where: { id } })
   return true
 }

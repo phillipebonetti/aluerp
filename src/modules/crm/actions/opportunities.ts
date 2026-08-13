@@ -1,93 +1,50 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
+import { getPrisma } from '@/src/core/database/client'
 import type { CRMOpportunity } from '../types'
 
-// Mock data - replace with actual database calls
-const mockOpportunities: CRMOpportunity[] = [
-  {
-    id: '1',
-    companyId: 'comp-1',
-    clientId: 'client-1',
-    name: 'Projeto Website',
-    stage: 'prospecção',
-    value: 15000,
-    probability: 30,
-    expectedCloseDate: new Date('2024-03-15'),
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15')
-  },
-  {
-    id: '2',
-    companyId: 'comp-1',
-    clientId: 'client-2',
-    name: 'Consultoria Digital',
-    stage: 'proposta',
-    value: 25000,
-    probability: 70,
-    expectedCloseDate: new Date('2024-02-28'),
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-20')
-  }
-]
+async function tenant(companyId?: string) {
+  const session = await getSession()
+  if (!session) throw new Error('Não autorizado')
+  if (companyId && companyId !== session.company.id) throw new Error('Empresa inválida')
+  const prisma = await getPrisma()
+  if (!prisma) throw new Error('Banco de dados indisponível')
+  return { prisma, companyId: session.company.id }
+}
 
 export async function getOpportunities(companyId: string): Promise<CRMOpportunity[]> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database query
-  return mockOpportunities.filter(opp => opp.companyId === companyId)
+  const { prisma, companyId: tenantId } = await tenant(companyId)
+  return prisma.opportunity.findMany({ where: { companyId: tenantId }, orderBy: { createdAt: 'desc' } }) as Promise<CRMOpportunity[]>
 }
 
 export async function getOpportunityById(id: string, companyId: string): Promise<CRMOpportunity | null> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database query
-  return mockOpportunities.find(opp => opp.id === id && opp.companyId === companyId) || null
+  const { prisma, companyId: tenantId } = await tenant(companyId)
+  return prisma.opportunity.findFirst({ where: { id, companyId: tenantId } }) as Promise<CRMOpportunity | null>
 }
 
-export async function createOpportunity(data: Omit<CRMOpportunity, 'id' | 'createdAt' | 'updatedAt'>): Promise<CRMOpportunity> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database insert
-  const newOpp: CRMOpportunity = {
-    ...data,
-    id: `opp-${Date.now()}`,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-  
-  return newOpp
+export async function createOpportunity(data: Omit<CRMOpportunity, 'id' | 'companyId' | 'createdAt' | 'updatedAt'> & { companyId?: string }): Promise<CRMOpportunity> {
+  const { prisma, companyId } = await tenant(data.companyId)
+  const { companyId: _ignored, ...payload } = data
+  return prisma.opportunity.create({ data: { ...payload, companyId } as never }) as Promise<CRMOpportunity>
 }
 
 export async function updateOpportunity(id: string, data: Partial<CRMOpportunity>): Promise<CRMOpportunity | null> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database update
-  const opp = mockOpportunities.find(o => o.id === id)
-  if (!opp) return null
-  
-  return { ...opp, ...data, updatedAt: new Date() }
+  const { prisma, companyId } = await tenant()
+  const { id: _id, companyId: _companyId, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = data
+  const existing = await prisma.opportunity.findFirst({ where: { id, companyId } })
+  if (!existing) return null
+  return prisma.opportunity.update({ where: { id }, data: payload as never }) as Promise<CRMOpportunity>
 }
 
 export async function deleteOpportunity(id: string): Promise<boolean> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database delete
+  const { prisma, companyId } = await tenant()
+  const existing = await prisma.opportunity.findFirst({ where: { id, companyId } })
+  if (!existing) return false
+  await prisma.opportunity.delete({ where: { id } })
   return true
 }
 
 export async function moveOpportunityToStage(id: string, stage: CRMOpportunity['stage']): Promise<CRMOpportunity | null> {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Não autorizado')
-  
-  // TODO: Replace with actual database update
-  const opp = mockOpportunities.find(o => o.id === id)
-  if (!opp) return null
-  
-  return { ...opp, stage, updatedAt: new Date() }
+  return updateOpportunity(id, { stage })
 }
