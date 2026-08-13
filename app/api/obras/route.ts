@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
     if (!authReq.user) {
       return ApiResponses.unauthorized('Usuário não encontrado')
     }
+    if (!process.env.DATABASE_URL) {
+      return ApiResponses.success({ data: [], total: 0, skip: 0, take: 10 }, 'Banco de dados não configurado; nenhuma obra disponível')
+    }
 
     try {
       const { searchParams } = new URL(req.url)
@@ -70,6 +73,9 @@ export async function POST(request: NextRequest) {
     const authReq = req as AuthenticatedRequest
     if (!authReq.user) {
       return ApiResponses.unauthorized('Usuário não encontrado')
+    }
+    if (!process.env.DATABASE_URL) {
+      return ApiResponses.internalServerError('Banco de dados não configurado para criar obras')
     }
 
     try {

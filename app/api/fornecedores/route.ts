@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     if (authError) return authError
     const authReq = req as AuthenticatedRequest
     if (!authReq.user) return ApiResponses.unauthorized('Usuário não encontrado')
+    if (!process.env.DATABASE_URL) {
+      return ApiResponses.success([], 'Banco de dados não configurado; nenhum fornecedor disponível')
+    }
     const suppliers = await new SupplierRepository().findAll({ companyId: authReq.user.companyId })
     return ApiResponses.success(suppliers, 'Fornecedores listados com sucesso')
   }, request)
@@ -30,6 +33,9 @@ export async function POST(request: NextRequest) {
     if (authError) return authError
     const authReq = req as AuthenticatedRequest
     if (!authReq.user) return ApiResponses.unauthorized('Usuário não encontrado')
+    if (!process.env.DATABASE_URL) {
+      return ApiResponses.internalServerError('Banco de dados não configurado para criar fornecedores')
+    }
     const parsed = supplierSchema.safeParse(await req.json())
     if (!parsed.success) throw new ApiError(400, 'Dados do fornecedor inválidos')
     const supplier = await new SupplierRepository().create({

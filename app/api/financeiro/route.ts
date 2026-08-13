@@ -28,6 +28,12 @@ export async function GET(request: NextRequest) {
     if (!authReq.user) {
       return ApiResponses.unauthorized('Usuário não encontrado')
     }
+    if (!process.env.DATABASE_URL) {
+      if (new URL(req.url).searchParams.has('metrics')) {
+        return ApiResponses.success({ revenue: 0, expenses: 0, profit: 0, balance: 0 }, 'Banco de dados não configurado; métricas vazias')
+      }
+      return ApiResponses.success({ data: [], total: 0, skip: 0, take: 20 }, 'Banco de dados não configurado; nenhuma transação disponível')
+    }
 
     try {
       const { searchParams } = new URL(req.url)
@@ -80,6 +86,9 @@ export async function POST(request: NextRequest) {
     const authReq = req as AuthenticatedRequest
     if (!authReq.user) {
       return ApiResponses.unauthorized('Usuário não encontrado')
+    }
+    if (!process.env.DATABASE_URL) {
+      return ApiResponses.internalServerError('Banco de dados não configurado para criar transações')
     }
 
     try {
