@@ -63,18 +63,16 @@ export function NotificationBell({ userId, companyId, unreadCount = 0 }: Notific
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          {count > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-2 -right-2 w-5 h-5 p-0 flex items-center justify-center text-xs"
-            >
-              {count > 9 ? '9+' : count}
-            </Badge>
-          )}
-        </Button>
+      <DropdownMenuTrigger className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <Bell className="h-5 w-5" />
+        {count > 0 && (
+          <Badge
+            variant="destructive"
+            className="absolute -right-1 -top-1 h-5 w-5 p-0 text-xs"
+          >
+            {count > 9 ? '9+' : count}
+          </Badge>
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-96">
