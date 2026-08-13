@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { IntegrationCard } from '@/components/integrations/integration-card'
 import {
+  getCurrentCompanyIdAction,
   listIntegrationsAction,
   testConnectionAction,
   syncIntegrationAction,
   disconnectIntegrationAction
 } from '@/src/actions/integrations'
 import { IntegrationProvider } from '@/src/lib/integrations/types'
-import { Plus, Zap, BarChart3, Lock, Code } from 'lucide-react'
+import { Zap, BarChart3, Lock, Code } from 'lucide-react'
 
 const INTEGRATION_PROVIDERS = [
   {
@@ -63,28 +64,47 @@ const INTEGRATION_PROVIDERS = [
   }
 ]
 
+interface IntegrationSummary {
+  id: string
+  provider: IntegrationProvider
+  name: string
+  status: string
+  isActive: boolean
+  lastSync?: Date | null
+  lastError?: string | null
+  _count?: { logs: number }
+}
+
 export default function IntegrationsDashboardPage() {
-  const [integrations, setIntegrations] = useState<any[]>([])
+  const [integrations, setIntegrations] = useState<IntegrationSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const companyId = 'temp-company-id' // Será obtido da sessão
-
-  useEffect(() => {
-    loadIntegrations()
-  }, [])
+  const [companyId, setCompanyId] = useState<string | null>(null)
 
   const loadIntegrations = async () => {
     setLoading(true)
-    const result = await listIntegrationsAction(companyId)
+    const currentCompanyId = companyId ?? await getCurrentCompanyIdAction()
+    setCompanyId(currentCompanyId)
+    if (!currentCompanyId) {
+      setIntegrations([])
+      setLoading(false)
+      return
+    }
+    const result = await listIntegrationsAction(currentCompanyId)
     if (result.success) {
       setIntegrations(result.data || [])
     }
     setLoading(false)
   }
 
+  useEffect(() => {
+    void loadIntegrations()
+  }, [])
+
   const handleTest = async (provider: IntegrationProvider) => {
     setActionLoading(`test-${provider}`)
+    if (!companyId) return
     const result = await testConnectionAction(companyId, provider)
     if (result.success) {
       await loadIntegrations()
@@ -94,6 +114,7 @@ export default function IntegrationsDashboardPage() {
 
   const handleSync = async (provider: IntegrationProvider) => {
     setActionLoading(`sync-${provider}`)
+    if (!companyId) return
     const result = await syncIntegrationAction(companyId, provider)
     if (result.success) {
       await loadIntegrations()
@@ -103,6 +124,7 @@ export default function IntegrationsDashboardPage() {
 
   const handleDisconnect = async (provider: IntegrationProvider) => {
     setActionLoading(`disconnect-${provider}`)
+    if (!companyId) return
     const result = await disconnectIntegrationAction(companyId, provider)
     if (result.success) {
       await loadIntegrations()

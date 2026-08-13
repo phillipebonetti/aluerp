@@ -2,8 +2,14 @@
 
 import { integrationManager, webhookManager, apiTokenManager } from '@/src/lib/integrations'
 import { IntegrationProvider } from '@/src/lib/integrations/types'
+import { getSession } from '@/src/core/auth'
 
 // ==================== Integration Management ====================
+
+export async function getCurrentCompanyIdAction() {
+  const session = await getSession()
+  return session?.company?.id ?? null
+}
 
 export async function setupIntegrationAction(
   companyId: string,

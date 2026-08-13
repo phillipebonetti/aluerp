@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/ui/page-header'
-import { Calendar, ChevronLeft, ChevronRight, Plus, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -100,7 +100,7 @@ export default function AgendaPage() {
               <ul className="text-sm text-red-700 mt-1 space-y-1">
                 {conflicts.map((c, idx) => (
                   <li key={idx}>
-                    {c.member} alocado em "{c.event1}" e "{c.event2}" no mesmo horário
+                    {c.member} alocado em &quot;{c.event1}&quot; e &quot;{c.event2}&quot; no mesmo horário
                   </li>
                 ))}
               </ul>

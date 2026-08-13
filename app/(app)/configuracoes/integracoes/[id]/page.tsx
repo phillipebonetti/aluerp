@@ -4,16 +4,26 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { IntegrationConfigModal } from '@/components/integrations/integration-config-modal'
 import { WebhooksPanel } from '@/components/integrations/webhooks-panel'
 import { ApiTokensPanel } from '@/components/integrations/api-tokens-panel'
 import { IntegrationLogs } from '@/components/integrations/integration-logs'
 import { IntegrationProvider, IntegrationStatus } from '@/src/lib/integrations/types'
+import {
+  getCurrentCompanyIdAction,
+  listIntegrationsAction,
+  getIntegrationLogsAction,
+  testConnectionAction,
+  syncIntegrationAction,
+  createWebhookAction,
+  listWebhooksAction,
+  listApiTokensAction,
+} from '@/src/actions/integrations'
 import { formatDate } from '@/src/utils/dashboard'
 
 interface IntegrationDetail {
@@ -25,9 +35,9 @@ interface IntegrationDetail {
   lastSync?: Date
   lastError?: string
   createdAt: Date
-  webhooks: any[]
-  logs: any[]
-  apiTokens: any[]
+  webhooks: Array<Record<string, unknown>>
+  logs: Array<Record<string, unknown>>
+  apiTokens: Array<Record<string, unknown>>
 }
 
 export default function IntegrationDetailPage() {
@@ -35,75 +45,71 @@ export default function IntegrationDetailPage() {
   const integrationId = params.id as string
 
   const [integration, setIntegration] = useState<IntegrationDetail | null>(null)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showConfig, setShowConfig] = useState(false)
   const [testingConnection, setTestingConnection] = useState(false)
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    setIntegration({
-      id: integrationId,
-      provider: 'WHATSAPP' as IntegrationProvider,
-      name: 'WhatsApp Business',
-      status: 'CONNECTED' as IntegrationStatus,
-      isActive: true,
-      lastSync: new Date(),
-      createdAt: new Date('2024-01-15'),
-      webhooks: [
-        {
-          id: '1',
-          url: 'https://your-app.com/webhooks/whatsapp',
-          events: ['message.received', 'message.delivered'],
-          isActive: true,
-          failureCount: 0
-        }
-      ],
-      logs: [
-        {
-          id: '1',
-          level: 'INFO',
-          endpoint: '/v1/messages',
-          method: 'POST',
-          statusCode: 200,
-          duration: 245,
-          createdAt: new Date()
-        }
-      ],
-      apiTokens: []
-    })
-    setLoading(false)
+    let active = true
+    async function loadIntegration() {
+      const companyId = await getCurrentCompanyIdAction()
+      if (active) setCompanyId(companyId)
+      if (!companyId) {
+        if (active) setLoading(false)
+        return
+      }
+      const result = await listIntegrationsAction(companyId)
+      const current = result.success ? result.data.find((item) => item.id === integrationId) : null
+      if (!current) {
+        if (active) setLoading(false)
+        return
+      }
+      const [logsResult, webhooksResult, tokensResult] = await Promise.all([
+        getIntegrationLogsAction(companyId, current.provider as IntegrationProvider),
+        listWebhooksAction(current.id),
+        listApiTokensAction(companyId),
+      ])
+      if (active) {
+        setIntegration({
+          ...current,
+          createdAt: current.enabledAt ?? new Date(),
+          webhooks: webhooksResult.success ? webhooksResult.data.map((webhook) => ({
+            ...webhook,
+            events: typeof webhook.events === 'string' ? JSON.parse(webhook.events) : webhook.events,
+          })) : [],
+          logs: logsResult.success ? logsResult.data : [],
+          apiTokens: tokensResult.success ? tokensResult.data.map((token) => ({
+            ...token,
+            token: '',
+            permissions: typeof token.permissions === 'string' ? JSON.parse(token.permissions) : token.permissions,
+          })) : [],
+        })
+        setLoading(false)
+      }
+    }
+    void loadIntegration()
+    return () => { active = false }
   }, [integrationId])
 
   const handleTestConnection = async () => {
+    if (!companyId || !integration) return
     setTestingConnection(true)
-    try {
-      // Mock test - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert('Connection successful!')
-    } catch (err) {
-      alert('Connection failed')
-    } finally {
-      setTestingConnection(false)
+    const result = await testConnectionAction(companyId, integration.provider)
+    if (result.success && result.connected) {
+      setIntegration({ ...integration, status: 'CONNECTED' as IntegrationStatus, lastError: undefined })
     }
+    setTestingConnection(false)
   }
 
   const handleSyncNow = async () => {
+    if (!companyId || !integration) return
     setTestingConnection(true)
-    try {
-      // Mock sync - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      if (integration) {
-        setIntegration({
-          ...integration,
-          lastSync: new Date()
-        })
-      }
-      alert('Sync completed successfully!')
-    } catch (err) {
-      alert('Sync failed')
-    } finally {
-      setTestingConnection(false)
+    const result = await syncIntegrationAction(companyId, integration.provider)
+    if (result.success) {
+      setIntegration({ ...integration, lastSync: new Date(), lastError: undefined })
     }
+    setTestingConnection(false)
   }
 
   if (loading) {
@@ -218,9 +224,18 @@ export default function IntegrationDetailPage() {
           <WebhooksPanel
             integrationId={integration.id}
             webhooks={integration.webhooks}
-            onAdd={async () => {}}
-            onDelete={async () => {}}
-            onToggle={async () => {}}
+            onAdd={async ({ url, events }) => {
+              if (!companyId) throw new Error('Empresa não encontrada')
+              const result = await createWebhookAction(companyId, integration.id, url, events)
+              if (!result.success) throw new Error(result.error)
+              setIntegration((current) => current ? { ...current, webhooks: [...current.webhooks, result.data] } : current)
+            }}
+            onDelete={async () => {
+              throw new Error('A exclusão de webhooks ainda não está disponível')
+            }}
+            onToggle={async () => {
+              throw new Error('A alteração de status de webhooks ainda não está disponível')
+            }}
           />
         </TabsContent>
 
