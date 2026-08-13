@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -7,6 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Generation and build must work in offline preview mode without a database.
+    // Runtime database operations remain guarded by DATABASE_URL checks.
+    url: process.env.DATABASE_URL ?? "postgresql://offline:offline@localhost:5432/offline",
   },
 });
