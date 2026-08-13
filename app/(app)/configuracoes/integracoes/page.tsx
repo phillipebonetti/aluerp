@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -82,7 +82,7 @@ export default function IntegrationsDashboardPage() {
 
   const [companyId, setCompanyId] = useState<string | null>(null)
 
-  const loadIntegrations = async () => {
+  const loadIntegrations = useCallback(async () => {
     setLoading(true)
     const currentCompanyId = companyId ?? await getCurrentCompanyIdAction()
     setCompanyId(currentCompanyId)
@@ -96,11 +96,13 @@ export default function IntegrationsDashboardPage() {
       setIntegrations(result.data || [])
     }
     setLoading(false)
-  }
+  }, [companyId])
 
+  // The initial fetch synchronizes the page with the server-backed integration state.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadIntegrations()
-  }, [])
+  }, [loadIntegrations])
 
   const handleTest = async (provider: IntegrationProvider) => {
     setActionLoading(`test-${provider}`)

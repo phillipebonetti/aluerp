@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import { Button } from './button'
 import { LucideIcon, Plus } from 'lucide-react'
+import Link from 'next/link'
 
 interface PageHeaderProps {
   title: string
@@ -8,6 +9,8 @@ interface PageHeaderProps {
   action?: {
     label: string
     icon?: LucideIcon
+    onClick?: () => void
+    href?: string
   }
   badge?: string
   className?: string
@@ -30,10 +33,16 @@ export function PageHeader({ title, description, action, badge, className }: Pag
         <p className="text-sm text-muted-foreground mt-1 text-pretty leading-relaxed">{description}</p>
       </div>
       {action && (
-        <Button size="sm" className="h-8 text-xs font-medium shrink-0">
-          <ActionIcon className="w-3.5 h-3.5" />
-          {action.label}
-        </Button>
+        action.href ? (
+          <Button asChild size="sm" className="h-8 text-xs font-medium shrink-0">
+            <Link href={action.href}><ActionIcon className="w-3.5 h-3.5" />{action.label}</Link>
+          </Button>
+        ) : (
+          <Button onClick={action.onClick} size="sm" className="h-8 text-xs font-medium shrink-0">
+            <ActionIcon className="w-3.5 h-3.5" />
+            {action.label}
+          </Button>
+        )
       )}
     </div>
   )
