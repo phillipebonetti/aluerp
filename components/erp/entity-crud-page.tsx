@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,7 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function loadItems() {
+  const loadItems = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -41,14 +42,13 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
     } finally {
       setLoading(false)
     }
-  }
+  }, [endpoint])
 
   // The initial fetch synchronizes this client page with the tenant-scoped API.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadItems()
-  }, [endpoint])
+  }, [loadItems])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -63,15 +63,18 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
       if (!response.ok) throw new Error('Não foi possível salvar o registro.')
       setOpen(false)
       setName(''); setEmail(''); setPhone('')
+      toast.success(`${singular} criado com sucesso`)
       await loadItems()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar o registro.')
+      const message = err instanceof Error ? err.message : 'Erro ao salvar o registro.'
+      setError(message)
+      toast.error(message)
     } finally { setSaving(false) }
   }
 
   return (
     <div className="mx-auto max-w-screen-2xl space-y-6 p-6">
-      <PageHeader title={title} description={description} action={{ label: `Novo ${singular}` }} />
+      <PageHeader title={title} description={description} action={{ label: `Novo ${singular}`, onClick: () => setOpen(true) }} />
       <div className="flex items-center justify-between gap-4">
         <Input placeholder={`Buscar ${title.toLowerCase()}...`} className="max-w-sm" />
         <Dialog open={open} onOpenChange={setOpen}>
