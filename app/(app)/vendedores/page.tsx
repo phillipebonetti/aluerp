@@ -2,18 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SalespersonTable } from '@/components/salesperson/salesperson-table'
 import { listSalespeople, deactivateSalesperson } from '@/app/actions/salesperson'
-import { Search, Plus } from 'lucide-react'
-import type { Salesperson } from '@/src/types/salesperson'
-
-// TODO: Get from auth context
-const companyId = 'test-company-id'
+import { getCurrentCompanyIdAction } from '@/src/actions/integrations'
+import { Search } from 'lucide-react'
+import type { Salesperson, SalespersonStatus } from '@/src/types/salesperson'
 
 export default function VendedoresPage() {
   const router = useRouter()
@@ -24,14 +21,16 @@ export default function VendedoresPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [skip, setSkip] = useState(0)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const take = 10
 
   async function loadData() {
+    if (!companyId) return
     try {
       setIsLoading(true)
       const result = await listSalespeople(companyId, {
         searchTerm: searchTerm || undefined,
-        status: (statusFilter as any) || undefined,
+        status: (statusFilter as SalespersonStatus) || undefined,
         skip,
         take,
       })
@@ -47,8 +46,18 @@ export default function VendedoresPage() {
   }
 
   useEffect(() => {
-    loadData()
-  }, [skip])
+    let active = true
+    void getCurrentCompanyIdAction().then((id) => {
+      if (active) setCompanyId(id)
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (companyId) void loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skip, companyId])
 
   function handleSearch() {
     setSkip(0)
@@ -108,12 +117,6 @@ export default function VendedoresPage() {
             </SelectContent>
           </Select>
 
-          <Link href="/vendedores/novo">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Vendedor
-            </Button>
-          </Link>
         </div>
 
         <SalespersonTable

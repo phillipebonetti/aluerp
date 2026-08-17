@@ -20,9 +20,11 @@ export class SalespersonService {
     })
   }
 
-  static async update(employeeId: string, data: UpdateSalespersonInput) {
+  static async update(companyId: string, employeeId: string, data: UpdateSalespersonInput) {
+    const current = await prisma.employee.findFirst({ where: { id: employeeId, companyId, isSalesperson: true } })
+    if (!current) return null
     return prisma.employee.update({
-      where: { id: employeeId },
+      where: { id: current.id },
       data: {
         name: data.name,
         email: data.email,
@@ -36,9 +38,9 @@ export class SalespersonService {
     })
   }
 
-  static async getById(employeeId: string) {
-    return prisma.employee.findUnique({
-      where: { id: employeeId },
+  static async getById(companyId: string, employeeId: string) {
+    return prisma.employee.findFirst({
+      where: { id: employeeId, companyId, isSalesperson: true },
       include: {
         salesGoals: true,
         serviceOrders: true,
@@ -90,16 +92,20 @@ export class SalespersonService {
     return { data, total }
   }
 
-  static async deactivate(employeeId: string) {
+  static async deactivate(companyId: string, employeeId: string) {
+    const current = await prisma.employee.findFirst({ where: { id: employeeId, companyId, isSalesperson: true } })
+    if (!current) return null
     return prisma.employee.update({
-      where: { id: employeeId },
+      where: { id: current.id },
       data: { status: 'INACTIVE' },
     })
   }
 
-  static async activate(employeeId: string) {
+  static async activate(companyId: string, employeeId: string) {
+    const current = await prisma.employee.findFirst({ where: { id: employeeId, companyId, isSalesperson: true } })
+    if (!current) return null
     return prisma.employee.update({
-      where: { id: employeeId },
+      where: { id: current.id },
       data: { status: 'ACTIVE' },
     })
   }

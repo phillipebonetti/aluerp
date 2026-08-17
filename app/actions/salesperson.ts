@@ -1,13 +1,16 @@
 'use server'
 
 import { SalespersonService } from '@/src/lib/services/salesperson-service'
+import { getSession } from '@/src/core/auth'
 import { CreateSalespersonSchema, UpdateSalespersonSchema, SalespersonFiltersSchema } from '@/src/lib/schemas/salesperson'
 import type { CreateSalespersonInput, UpdateSalespersonInput, SalespersonFilters } from '@/src/types/salesperson'
 
-export async function createSalesperson(companyId: string, input: CreateSalespersonInput) {
+export async function createSalesperson(_companyId: string, input: CreateSalespersonInput) {
   try {
+    const session = await getSession()
+    if (!session) return { success: false, error: 'Não autorizado' }
     const validated = CreateSalespersonSchema.parse(input)
-    const salesperson = await SalespersonService.create(companyId, validated)
+    const salesperson = await SalespersonService.create(session.company.id, validated)
     return { success: true, data: salesperson }
   } catch (error) {
     console.error('Error creating salesperson:', error)
@@ -17,8 +20,10 @@ export async function createSalesperson(companyId: string, input: CreateSalesper
 
 export async function updateSalesperson(employeeId: string, input: UpdateSalespersonInput) {
   try {
+    const session = await getSession()
+    if (!session) return { success: false, error: 'Não autorizado' }
     const validated = UpdateSalespersonSchema.parse(input)
-    const salesperson = await SalespersonService.update(employeeId, validated)
+    const salesperson = await SalespersonService.update(session.company.id, employeeId, validated)
     return { success: true, data: salesperson }
   } catch (error) {
     console.error('Error updating salesperson:', error)
@@ -28,7 +33,9 @@ export async function updateSalesperson(employeeId: string, input: UpdateSalespe
 
 export async function getSalesperson(employeeId: string) {
   try {
-    const salesperson = await SalespersonService.getById(employeeId)
+    const session = await getSession()
+    if (!session) return { success: false, error: 'Não autorizado' }
+    const salesperson = await SalespersonService.getById(session.company.id, employeeId)
     return { success: true, data: salesperson }
   } catch (error) {
     console.error('Error fetching salesperson:', error)
@@ -36,10 +43,12 @@ export async function getSalesperson(employeeId: string) {
   }
 }
 
-export async function listSalespeople(companyId: string, filters?: SalespersonFilters) {
+export async function listSalespeople(_companyId: string, filters?: SalespersonFilters) {
   try {
+    const session = await getSession()
+    if (!session) return { success: false, data: [], total: 0, error: 'Não autorizado' }
     const validated = SalespersonFiltersSchema.parse(filters || {})
-    const result = await SalespersonService.list(companyId, validated)
+    const result = await SalespersonService.list(session.company.id, validated)
     return { success: true, ...result }
   } catch (error) {
     console.error('Error listing salespeople:', error)
@@ -49,7 +58,9 @@ export async function listSalespeople(companyId: string, filters?: SalespersonFi
 
 export async function deactivateSalesperson(employeeId: string) {
   try {
-    const salesperson = await SalespersonService.deactivate(employeeId)
+    const session = await getSession()
+    if (!session) return { success: false, error: 'Não autorizado' }
+    const salesperson = await SalespersonService.deactivate(session.company.id, employeeId)
     return { success: true, data: salesperson }
   } catch (error) {
     console.error('Error deactivating salesperson:', error)
@@ -59,7 +70,9 @@ export async function deactivateSalesperson(employeeId: string) {
 
 export async function activateSalesperson(employeeId: string) {
   try {
-    const salesperson = await SalespersonService.activate(employeeId)
+    const session = await getSession()
+    if (!session) return { success: false, error: 'Não autorizado' }
+    const salesperson = await SalespersonService.activate(session.company.id, employeeId)
     return { success: true, data: salesperson }
   } catch (error) {
     console.error('Error activating salesperson:', error)
