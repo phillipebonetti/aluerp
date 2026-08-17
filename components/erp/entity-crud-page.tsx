@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { LucideIcon } from 'lucide-react'
 
 interface EntityRecord { id: string; name: string; status?: string; email?: string | null; phone?: string | null; client?: { name: string } | null }
@@ -77,8 +77,8 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
       <PageHeader title={title} description={description} action={{ label: `Novo ${singular}`, onClick: () => setOpen(true) }} />
       <div className="flex items-center justify-between gap-4">
         <Input placeholder={`Buscar ${title.toLowerCase()}...`} className="max-w-sm" />
+        <Button type="button" onClick={() => setOpen(true)}>Adicionar {singular}</Button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button>Adicionar {singular}</Button>} />
           <DialogContent>
             <DialogHeader><DialogTitle>Novo {singular}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
