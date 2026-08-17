@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getCurrentCompanyIdAction } from '@/src/actions/integrations'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,10 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { OSTable } from '@/components/os/os-table'
 import { listServiceOrders } from '@/app/actions/os'
 import type { ServiceOrderStatus } from '@/src/types/os'
-import { Search, Plus } from 'lucide-react'
-
-// TODO: Get from auth context
-const companyId = 'test-company-id'
+import { Search } from 'lucide-react'
 
 export default function OSPage() {
   const router = useRouter()
@@ -24,9 +21,11 @@ export default function OSPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [skip, setSkip] = useState(0)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const take = 10
 
   async function loadData() {
+    if (!companyId) return
     try {
       setIsLoading(true)
       const result = await listServiceOrders(companyId, {
@@ -44,10 +43,18 @@ export default function OSPage() {
     }
   }
 
-  // Load data on mount and when filters change
-  if (data.length === 0 && !isLoading) {
-    loadData()
-  }
+  useEffect(() => {
+    let active = true
+    void getCurrentCompanyIdAction().then((id) => {
+      if (active) setCompanyId(id)
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (companyId) void loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, skip])
 
   function handleSearch() {
     setSkip(0)
@@ -97,12 +104,6 @@ export default function OSPage() {
             </SelectContent>
           </Select>
 
-          <Link href="/os/novo">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova OS
-            </Button>
-          </Link>
         </div>
 
         <OSTable
@@ -110,11 +111,8 @@ export default function OSPage() {
           isLoading={isLoading}
           onView={(id) => router.push(`/os/${id}`)}
           onEdit={(id) => router.push(`/os/${id}/editar`)}
-          onDelete={(id) => {
-            if (confirm('Tem certeza que deseja deletar esta OS?')) {
-              // TODO: Implement delete
-              console.log('Delete:', id)
-            }
+          onDelete={() => {
+            window.alert('A exclusão de OS ainda não possui uma action de servidor implementada.')
           }}
         />
 

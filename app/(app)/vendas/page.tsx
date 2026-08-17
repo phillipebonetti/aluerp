@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getLeads } from '@/src/modules/crm/actions/leads'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { createLead, getLeads } from '@/src/modules/crm/actions/leads'
 import { getCurrentCompanyIdAction } from '@/src/actions/integrations'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -21,6 +22,10 @@ export default function CommercialCRMPage() {
   const [leads, setLeads] = useState<CRMLead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [leadName, setLeadName] = useState('')
+  const [leadEmail, setLeadEmail] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -40,6 +45,27 @@ export default function CommercialCRMPage() {
     return () => { active = false }
   }, [])
 
+  async function handleCreateLead(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!leadName.trim()) return
+    setSaving(true)
+    setError(null)
+    try {
+      const companyId = await getCurrentCompanyIdAction()
+      if (!companyId) throw new Error('Sessão não encontrada')
+      await createLead({ name: leadName.trim(), email: leadEmail.trim() || undefined, status: 'NEW', estimatedValue: 0, source: 'OUTRO' })
+      setLeadName('')
+      setLeadEmail('')
+      setDialogOpen(false)
+      const result = await getLeads(companyId)
+      setLeads(result)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível criar o lead')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const totalPipeline = useMemo(
     () => leads.reduce((sum, lead) => sum + Number(lead.estimatedValue ?? 0), 0),
     [leads],
@@ -52,10 +78,20 @@ export default function CommercialCRMPage() {
           <h1 className="text-3xl font-bold">Vendas - CRM</h1>
           <p className="mt-1 text-muted-foreground">Pipeline de vendas e gestão de leads</p>
         </div>
-        <Button className="gap-2" disabled>
+        <Button className="gap-2" onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4" />
           Novo Lead
         </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Novo Lead</DialogTitle></DialogHeader>
+            <form onSubmit={handleCreateLead} className="flex flex-col gap-4">
+              <Input autoFocus placeholder="Nome" value={leadName} onChange={(event) => setLeadName(event.target.value)} required />
+              <Input type="email" placeholder="E-mail (opcional)" value={leadEmail} onChange={(event) => setLeadEmail(event.target.value)} />
+              <Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar lead'}</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {error && <Card className="p-4 text-sm text-destructive">{error}</Card>}
