@@ -5,6 +5,7 @@ import { FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { OrcamentoCreateForm } from '@/components/orcamentos/orcamento-create-form'
 import { getAllBudgets } from '@/src/modules/orcamentos/actions'
@@ -36,6 +37,7 @@ export default function OrcamentosPage() {
   return (
     <div className="mx-auto flex max-w-screen-2xl flex-col gap-6 p-6">
       <PageHeader title="Orçamentos" description="Crie, envie e acompanhe orçamentos de esquadrias, vidros e instalações." action={{ label: 'Novo Orçamento', onClick: () => setOpen(true) }} />
+      <Button type="button" onClick={() => setOpen(true)} className="w-fit">Novo Orçamento</Button>
       {error && <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

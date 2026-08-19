@@ -60,7 +60,10 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), email: email.trim() || undefined, phone: phone.trim() || undefined }),
       })
-      if (!response.ok) throw new Error('Não foi possível salvar o registro.')
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || 'Não foi possível salvar o registro.')
+      }
       setOpen(false)
       setName(''); setEmail(''); setPhone('')
       toast.success(`${singular} criado com sucesso`)
