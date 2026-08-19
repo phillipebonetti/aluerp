@@ -13,7 +13,7 @@
 
 // Banco de Dados
 export { getPrisma } from '@/src/core/database'
-export type { PrismaClient } from '@/src/core/database'
+export type { PrismaClient } from '@/lib/generated/prisma/client'
 
 // Supabase
 export { createClient as createSupabaseClient } from '@/src/core/supabase/client'

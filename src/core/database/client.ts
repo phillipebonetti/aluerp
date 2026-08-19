@@ -10,6 +10,7 @@
  * client gerado não derruba o app inteiro na raiz.
  */
 import type { PrismaClient } from '../../../lib/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -23,11 +24,12 @@ export async function getPrisma(): Promise<PrismaClient | null> {
   if (globalForPrisma.prisma) return globalForPrisma.prisma
 
   try {
-    const { PrismaClient: Client } = await import('../../../lib/generated/prisma/client')
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) return null
 
-    const client = new Client({
-      accelerateUrl: process.env.DATABASE_URL ?? 'prisma://placeholder',
-    })
+    const { PrismaClient: Client } = await import('../../../lib/generated/prisma/client')
+    const adapter = new PrismaPg({ connectionString: databaseUrl })
+    const client = new Client({ adapter })
 
     if (process.env.NODE_ENV !== 'production') {
       globalForPrisma.prisma = client
