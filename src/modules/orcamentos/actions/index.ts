@@ -1,7 +1,7 @@
 'use server'
 
 import { getCurrentUser } from '@/src/core/auth'
-import { BudgetService } from '@/services'
+import { BudgetService } from '@/src/services'
 
 /**
  * Recupera todos os orçamentos da empresa
@@ -75,6 +75,61 @@ export async function createBudget(input: {
     return { data: budget }
   } catch (error: any) {
     return { error: error.message }
+  }
+}
+
+export async function createBudgetWithItems(input: {
+  clientId: string
+  salespersonId?: string
+  projectId?: string
+  validUntil: string
+  notes?: string
+  items: Array<{ description: string; quantity: number; unitPrice: number; discount?: number }>
+}) {
+  const user = await getCurrentUser()
+  if (!user?.companyId) return { error: 'Unauthorized' }
+  if (!input.items.length) return { error: 'Adicione pelo menos um item' }
+
+  try {
+    const { prisma } = await import('@/src/core/database')
+    const last = await prisma.quote.findFirst({
+      where: { companyId: user.companyId },
+      orderBy: { createdAt: 'desc' },
+      select: { number: true },
+    })
+    const nextNumber = String((Number(last?.number) || 0) + 1).padStart(6, '0')
+    const totalValue = input.items.reduce((sum, item) => {
+      const gross = item.quantity * item.unitPrice
+      return sum + gross - gross * ((item.discount ?? 0) / 100)
+    }, 0)
+
+    const quote = await prisma.$transaction(async (tx) => {
+      const created = await tx.quote.create({
+        data: {
+          companyId: user.companyId,
+          clientId: input.clientId,
+          projectId: input.projectId || null,
+          salespersonId: input.salespersonId || null,
+          number: nextNumber,
+          totalValue,
+          validUntil: new Date(input.validUntil),
+          notes: input.notes?.trim() || null,
+          status: 'DRAFT',
+          items: {
+            create: input.items.map((item, index) => {
+              const gross = item.quantity * item.unitPrice
+              const totalPrice = gross - gross * ((item.discount ?? 0) / 100)
+              return { description: item.description.trim(), quantity: item.quantity, unitPrice: item.unitPrice, totalPrice, discount: item.discount ?? 0, order: index + 1 }
+            }),
+          },
+        },
+        include: { client: true, items: true },
+      })
+      return created
+    })
+    return { data: quote }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Erro ao criar orçamento' }
   }
 }
 
