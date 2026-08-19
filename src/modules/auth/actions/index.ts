@@ -101,19 +101,17 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     return { error: 'Erro ao criar conta. Tente novamente.' }
   }
 
-  // Cria o perfil do usuário no banco via Prisma
+  // O schema atual não possui o model User. Não inventamos um delegate Prisma:
+  // o cadastro real precisa de um perfil/membership modelado no banco antes
+  // de concluir o onboarding.
   const prisma = await getPrisma()
   if (!prisma) {
     return { error: 'Banco de dados indisponível. Tente novamente.' }
   }
 
-  await prisma.user.upsert({
-    where: { id: data.user.id },
-    create: { id: data.user.id, name, email },
-    update: { name },
-  })
-
-  redirect('/onboarding')
+  return {
+    error: 'O schema Prisma atual não possui o model User. O cadastro real não pode concluir até o modelo de perfil ser definido.',
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -160,20 +158,11 @@ export async function createCompanyAction(
     return { error: 'Banco de dados indisponível. Tente novamente.' }
   }
 
-  // Cria empresa e vincula o usuário como OWNER
-  await prisma.company.create({
-    data: {
-      name,
-      cnpj,
-      phone,
-      email,
-      members: {
-        create: { userId: user.id, role: 'OWNER' },
-      },
-    },
-  })
-
-  redirect('/dashboard')
+  void prisma
+  void user
+  return {
+    error: 'O schema Prisma atual não possui CompanyMember. A empresa não pode ser vinculada ao usuário com segurança.',
+  }
 }
 
 // ─────────────────────────────────────────────
