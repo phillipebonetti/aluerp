@@ -1,25 +1,25 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
 import { OSService } from '@/services'
 
 /**
  * Recupera todas as OS da empresa
  */
 export async function getAllOS() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const orders = await osService.getAll({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: orders }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -28,19 +28,19 @@ export async function getAllOS() {
  * Recupera uma OS específica
  */
 export async function getOSById(osId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const order = await osService.getById(osId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -55,8 +55,8 @@ export async function createOS(input: {
   description?: string
   notes?: string
 }) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -67,11 +67,11 @@ export async function createOS(input: {
         ...input,
         scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : undefined,
       },
-      { companyId: user.companyId }
+      { companyId: session.company.id }
     )
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -91,8 +91,8 @@ export async function updateOS(
     notes?: string
   }
 ) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -106,11 +106,11 @@ export async function updateOS(
         startDate: input.startDate ? new Date(input.startDate) : undefined,
         endDate: input.endDate ? new Date(input.endDate) : undefined,
       },
-      { companyId: user.companyId }
+      { companyId: session.company.id }
     )
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -119,19 +119,19 @@ export async function updateOS(
  * Deleta uma OS
  */
 export async function deleteOS(osId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const success = await osService.delete(osId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: success }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -140,19 +140,19 @@ export async function deleteOS(osId: string) {
  * Inicia uma OS
  */
 export async function startOS(osId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const order = await osService.start(osId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -161,19 +161,19 @@ export async function startOS(osId: string) {
  * Conclui uma OS
  */
 export async function completeOS(osId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const order = await osService.complete(osId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -182,19 +182,19 @@ export async function completeOS(osId: string) {
  * Cancela uma OS
  */
 export async function cancelOS(osId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const order = await osService.cancel(osId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: order }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -203,19 +203,19 @@ export async function cancelOS(osId: string) {
  * Recupera OS por projeto
  */
 export async function getOSByProject(projectId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const orders = await osService.getByProject(projectId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: orders }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -224,19 +224,19 @@ export async function getOSByProject(projectId: string) {
  * Lista OS abertas
  */
 export async function getOpenOS() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const orders = await osService.getOpen({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: orders }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -245,19 +245,19 @@ export async function getOpenOS() {
  * Conta OS por status
  */
 export async function countOSByStatus() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const counts = await osService.countByStatus({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: counts }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -266,19 +266,19 @@ export async function countOSByStatus() {
  * Gera próximo número de OS
  */
 export async function getNextOSNumber() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const osService = new OSService()
     const nextNumber = await osService.getNextNumber({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: nextNumber }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }

@@ -1,58 +1,58 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
 import { ClientService } from '@/services'
 
 export async function getClientsWithAnalysis() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const clientService = new ClientService()
     const clients = await clientService.getClientsWithAnalysis({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: clients }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function getActiveClientsCount() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const clientService = new ClientService()
     const count = await clientService.getActiveClientsCount({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: count }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function getClientBalance(clientId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const clientService = new ClientService()
     const balance = await clientService.calculateClientBalance(clientId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: balance }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }

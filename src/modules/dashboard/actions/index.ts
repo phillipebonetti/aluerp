@@ -1,29 +1,29 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
 import { DashboardService } from '@/src/services/dashboard.service'
 
 export async function getDashboardData() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const dashboardService = new DashboardService()
     const data = await dashboardService.getDashboardData({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function getDashboardKPIs() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -31,11 +31,11 @@ export async function getDashboardKPIs() {
     const dashboardService = new DashboardService()
     const financialService = dashboardService['financialService']
     const kpis = await financialService.getDashboardKPIs({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: kpis }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }

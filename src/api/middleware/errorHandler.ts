@@ -15,15 +15,15 @@ export class ApiError extends Error {
 /**
  * Wrapper para executar handlers de API com error handling
  */
-export async function handleApiRequest<T>(
-  handler: (req: NextRequest) => Promise<NextResponse<T>>,
+export async function handleApiRequest(
+  handler: (req: NextRequest) => Promise<NextResponse>,
   request: NextRequest
-): Promise<NextResponse<T>> {
+): Promise<NextResponse> {
   try {
     return await handler(request)
   } catch (error) {
     console.error('[API] Error:', error)
-    return handleApiError(error) as NextResponse<T>
+    return handleApiError(error)
   }
 }
 

@@ -1,25 +1,27 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
+import { isPreviewMode } from '@/src/core/config'
 import { BudgetService } from '@/src/services'
 
 /**
  * Recupera todos os orçamentos da empresa
  */
 export async function getAllBudgets() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
+  if (isPreviewMode) return { data: [] }
 
   try {
     const budgetService = new BudgetService()
     const budgets = await budgetService.getAll({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budgets }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -28,19 +30,19 @@ export async function getAllBudgets() {
  * Recupera um orçamento específico
  */
 export async function getBudgetById(budgetId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const budget = await budgetService.getById(budgetId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -57,8 +59,8 @@ export async function createBudget(input: {
   validUntil?: string
   notes?: string
 }) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -69,11 +71,11 @@ export async function createBudget(input: {
         ...input,
         validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
       },
-      { companyId: user.companyId }
+      { companyId: session.company.id }
     )
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -86,14 +88,14 @@ export async function createBudgetWithItems(input: {
   notes?: string
   items: Array<{ description: string; quantity: number; unitPrice: number; discount?: number }>
 }) {
-  const user = await getCurrentUser()
-  if (!user?.companyId) return { error: 'Unauthorized' }
+  const session = await getSession()
+  if (!session?.company.id) return { error: 'Unauthorized' }
   if (!input.items.length) return { error: 'Adicione pelo menos um item' }
 
   try {
     const { prisma } = await import('@/src/core/database')
     const last = await prisma.quote.findFirst({
-      where: { companyId: user.companyId },
+      where: { companyId: session.company.id },
       orderBy: { createdAt: 'desc' },
       select: { number: true },
     })
@@ -106,7 +108,7 @@ export async function createBudgetWithItems(input: {
     const quote = await prisma.$transaction(async (tx) => {
       const created = await tx.quote.create({
         data: {
-          companyId: user.companyId,
+          companyId: session.company.id,
           clientId: input.clientId,
           projectId: input.projectId || null,
           salespersonId: input.salespersonId || null,
@@ -146,8 +148,8 @@ export async function updateBudget(
     notes?: string
   }
 ) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
@@ -159,11 +161,11 @@ export async function updateBudget(
         ...input,
         validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
       },
-      { companyId: user.companyId }
+      { companyId: session.company.id }
     )
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -172,19 +174,19 @@ export async function updateBudget(
  * Deleta um orçamento
  */
 export async function deleteBudget(budgetId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const success = await budgetService.delete(budgetId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: success }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -193,19 +195,19 @@ export async function deleteBudget(budgetId: string) {
  * Aprova um orçamento
  */
 export async function approveBudget(budgetId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const budget = await budgetService.approve(budgetId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -214,19 +216,19 @@ export async function approveBudget(budgetId: string) {
  * Rejeita um orçamento
  */
 export async function rejectBudget(budgetId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const budget = await budgetService.reject(budgetId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -235,19 +237,19 @@ export async function rejectBudget(budgetId: string) {
  * Envia um orçamento
  */
 export async function sendBudget(budgetId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const budget = await budgetService.send(budgetId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budget }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -256,19 +258,19 @@ export async function sendBudget(budgetId: string) {
  * Recupera orçamentos por cliente
  */
 export async function getBudgetsByClient(clientId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const budgets = await budgetService.getByClient(clientId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: budgets }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
@@ -277,19 +279,19 @@ export async function getBudgetsByClient(clientId: string) {
  * Conta orçamentos por status
  */
 export async function countBudgetsByStatus() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const budgetService = new BudgetService()
     const counts = await budgetService.countByStatus({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: counts }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }

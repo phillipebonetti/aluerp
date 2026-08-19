@@ -1,76 +1,76 @@
 'use server'
 
-import { getCurrentUser } from '@/src/core/auth'
+import { getSession } from '@/src/core/auth'
 import { ProjectService } from '@/services'
 
 export async function getActiveProjects() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const projectService = new ProjectService()
     const projects = await projectService.getActiveProjectsWithAnalysis({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: projects }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function getProjectFinancialStatus(projectId: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const projectService = new ProjectService()
     const status = await projectService.getProjectFinancialStatus(projectId, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: status }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function getProjectsByStatus(status: string) {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const projectService = new ProjectService()
     const projects = await projectService.getProjectsByStatus(status, {
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: projects }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }
 
 export async function countActiveProjects() {
-  const user = await getCurrentUser()
-  if (!user || !user.companyId) {
+  const session = await getSession()
+  if (!session || !session.company.id) {
     return { error: 'Unauthorized' }
   }
 
   try {
     const projectService = new ProjectService()
     const count = await projectService.countActiveProjects({
-      companyId: user.companyId,
+      companyId: session.company.id,
     })
 
     return { data: count }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: error.message }
   }
 }

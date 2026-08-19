@@ -4,6 +4,7 @@ import { handleApiRequest, requireAuth, validateQuery, ApiError } from '@/src/ap
 import { ApiResponses } from '@/src/api/utils/response'
 import { ClientService } from '@/src/services'
 import { AuthenticatedRequest } from '@/src/api/middleware/auth'
+import { isPreviewMode } from '@/src/core/config'
 
 // Schema de validação para query params
 const listClientsSchema = z.object({
@@ -36,6 +37,9 @@ export async function GET(request: NextRequest) {
     const authReq = req as AuthenticatedRequest
     if (!authReq.user) {
       return ApiResponses.unauthorized('Usuário não encontrado')
+    }
+    if (isPreviewMode) {
+      return ApiResponses.success({ data: [], total: 0, skip: 0, take: 100 }, 'Clientes listados com sucesso')
     }
 
     try {
