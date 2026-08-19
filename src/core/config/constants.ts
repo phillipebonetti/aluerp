@@ -28,8 +28,12 @@ export const hasSupabase = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
 /** true quando há uma connection string de banco configurada. */
 export const hasDatabase = Boolean(process.env.DATABASE_URL)
 
-/** true quando o app deve usar o fallback de preview (sem backend). */
-export const isPreviewMode = !hasSupabase
+/**
+ * Preview só existe quando nenhum backend real está configurado.
+ * Se apenas uma parte da configuração existir, o app permanece no caminho
+ * real e falha explicitamente, nunca troca silenciosamente para preview.
+ */
+export const isPreviewMode = !hasSupabase && !hasDatabase
 
 /** Nome do cookie de sessão usado no modo preview. */
 export const PREVIEW_SESSION_COOKIE = 'aluerp_preview_session'

@@ -2,7 +2,9 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { handleApiRequest, validateBody, ApiError } from '@/src/api/middleware'
 import { ApiResponses } from '@/src/api/utils/response'
-import { AuthService } from '@/src/services'
+import { createServerClient } from '@/src/core/supabase'
+import { getPrisma } from '@/src/core/database'
+import { isPreviewMode } from '@/src/core/config'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -57,34 +59,33 @@ async function handleLogin(request: NextRequest) {
       return ApiResponses.badRequest('Dados de login inválidos')
     }
 
-    const authService = new AuthService()
+    if (isPreviewMode) {
+      return ApiResponses.unauthorized('Login de preview deve usar o fluxo de preview')
+    }
 
-    // TODO: Implementar validação de senha com Better Auth
-    // const token = await authService.login(body.email, body.password)
+    const supabase = await createServerClient()
+    if (!supabase) return ApiResponses.internalServerError('Serviço de autenticação indisponível')
 
-    // Placeholder: retornar token mockado
-    const mockToken = Buffer.from(
-      JSON.stringify({
-        sub: 'user-id',
-        email: body.email,
-        iat: Date.now(),
-        exp: Date.now() + 24 * 60 * 60 * 1000, // 24h
-      })
-    ).toString('base64')
-
-    const user = await authService.getUserByEmail(body.email)
-    if (!user) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: body.email,
+      password: body.password,
+    })
+    if (error || !data.user) {
       return ApiResponses.unauthorized('Email ou senha incorretos')
     }
 
-    return ApiResponses.success(
-      {
-        token: mockToken,
-        user,
-        expiresIn: 86400, // 24h em segundos
+    const prisma = await getPrisma()
+    const profile = await prisma.user.findUnique({ where: { id: data.user.id } })
+    if (!profile) return ApiResponses.unauthorized('Perfil de usuário não encontrado')
+
+    return ApiResponses.success({
+      user: {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+        avatar: profile.image,
       },
-      'Login realizado com sucesso'
-    )
+    }, 'Login realizado com sucesso')
   } catch (error) {
     if (error instanceof Response) return error
     throw new ApiError(400, 'Erro ao fazer login')
@@ -101,34 +102,38 @@ async function handleRegister(request: NextRequest) {
       return ApiResponses.badRequest('Dados de registro inválidos')
     }
 
-    const authService = new AuthService()
+    if (isPreviewMode) {
+      return ApiResponses.badRequest('Cadastro de preview deve usar o fluxo de preview')
+    }
 
-    // TODO: Implementar criação de usuário com Better Auth
-    // const newUser = await authService.register(body)
+    const supabase = await createServerClient()
+    if (!supabase) return ApiResponses.internalServerError('Serviço de autenticação indisponível')
 
-    // Placeholder: retornar usuário mockado
-    const mockToken = Buffer.from(
-      JSON.stringify({
-        sub: 'new-user-id',
-        email: body.email,
-        iat: Date.now(),
-        exp: Date.now() + 24 * 60 * 60 * 1000,
-      })
-    ).toString('base64')
+    const { data, error } = await supabase.auth.signUp({
+      email: body.email,
+      password: body.password,
+    })
+    if (error || !data.user) {
+      return ApiResponses.badRequest(error?.message || 'Não foi possível criar a conta')
+    }
 
-    return ApiResponses.created(
-      {
-        token: mockToken,
-        user: {
-          id: 'new-user-id',
-          email: body.email,
-          name: body.name,
-          companyId: 'new-company-id',
-        },
-        expiresIn: 86400,
+    const prisma = await getPrisma()
+    const user = await prisma.user.upsert({
+      where: { id: data.user.id },
+      create: { id: data.user.id, email: body.email, name: body.name },
+      update: { email: body.email, name: body.name },
+    })
+    const company = await prisma.company.create({
+      data: {
+        name: body.companyName,
+        members: { create: { userId: user.id, role: 'OWNER' } },
       },
-      'Usuário registrado com sucesso'
-    )
+    })
+
+    return ApiResponses.created({
+      user: { id: user.id, email: user.email, name: user.name },
+      company: { id: company.id, name: company.name },
+    }, 'Usuário registrado com sucesso')
   } catch (error) {
     if (error instanceof Response) return error
     throw new ApiError(400, 'Erro ao registrar usuário')
@@ -147,26 +152,21 @@ async function handleRefreshToken(request: NextRequest) {
       return ApiResponses.badRequest('Refresh token não fornecido')
     }
 
-    // TODO: Implementar validação e atualização de token
-    // const newToken = await authService.refreshToken(refreshToken)
+    if (isPreviewMode) {
+      return ApiResponses.unauthorized('Refresh não está disponível no modo preview')
+    }
 
-    // Placeholder: retornar novo token mockado
-    const newToken = Buffer.from(
-      JSON.stringify({
-        sub: 'user-id',
-        iat: Date.now(),
-        exp: Date.now() + 24 * 60 * 60 * 1000,
-      })
-    ).toString('base64')
+    const supabase = await createServerClient()
+    if (!supabase) return ApiResponses.internalServerError('Serviço de autenticação indisponível')
 
-    return ApiResponses.success(
-      {
-        token: newToken,
-        expiresIn: 86400,
-      },
-      'Token atualizado com sucesso'
-    )
-  } catch (error) {
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken })
+    if (error || !data.session) return ApiResponses.unauthorized('Token inválido ou expirado')
+
+    return ApiResponses.success({
+      accessToken: data.session.access_token,
+      expiresAt: data.session.expires_at,
+    }, 'Token atualizado com sucesso')
+  } catch {
     throw new ApiError(401, 'Token inválido ou expirado')
   }
 }

@@ -11,8 +11,8 @@
 import { createServerClient as createClient } from '@/src/core/supabase'
 import { getPrisma } from '@/src/core/database'
 import { isPreviewMode } from '@/src/core/config'
-import { getPreviewSessionUserId } from '@/src/core/auth'
-import { findMembershipByUserId, findUserById } from '@/src/core/auth'
+import { getPreviewSessionUserId } from '@/src/core/auth/preview/session'
+import { findMembershipByUserId, findUserById } from '@/src/core/auth/preview/store'
 
 // ─────────────────────────────────────────────
 // Tipos
