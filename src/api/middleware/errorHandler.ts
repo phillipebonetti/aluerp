@@ -6,7 +6,7 @@ export class ApiError extends Error {
   constructor(
     public statusCode: number = 500,
     public message: string = 'Erro interno do servidor',
-    public details?: any
+    public details?: unknown
   ) {
     super(message)
   }
@@ -74,8 +74,11 @@ export function handleApiError(error: unknown): NextResponse {
 
   // Erro genérico
   if (error instanceof Error) {
-    console.error('[API] Unhandled error:', error.message)
-    return ApiResponses.internalServerError(error.message)
+    console.error('[v0] Unhandled API error', {
+      name: error.name,
+      message: error.message,
+    })
+    return ApiResponses.internalServerError()
   }
 
   return ApiResponses.internalServerError('Erro desconhecido')

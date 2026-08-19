@@ -65,7 +65,11 @@ export async function GET(request: NextRequest) {
       return ApiResponses.success(result, 'Clientes listados com sucesso')
     } catch (error) {
       if (error instanceof ApiError) throw error
-      throw new ApiError(500, 'Erro ao listar clientes')
+      console.error('[v0] Falha ao listar clientes', {
+        name: error instanceof Error ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+      })
+      throw error
     }
   }, request)
 }
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
       const body = await req.json()
       const parsed = createClientSchema.safeParse(body)
       if (!parsed.success) {
-        return ApiResponses.badRequest(`Dados do cliente inválidos: ${Object.values(parsed.error.flatten().fieldErrors).flat().join('; ')}`)
+        return ApiResponses.badRequest('Dados do cliente inválidos', parsed.error.flatten())
       }
 
       const clientService = new ClientService()
@@ -101,8 +105,11 @@ export async function POST(request: NextRequest) {
       return ApiResponses.created(newClient, 'Cliente criado com sucesso')
     } catch (error) {
       if (error instanceof ApiError) throw error
-      const message = error instanceof Error ? error.message : 'Erro ao criar cliente'
-      throw new ApiError(400, message)
+      console.error('[v0] Falha ao criar cliente', {
+        name: error instanceof Error ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+      })
+      throw error
     }
   }, request)
 }

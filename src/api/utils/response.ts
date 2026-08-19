@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export type ApiResponse<T = any> = {
+export type ApiResponse<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -33,9 +33,9 @@ export const ApiResponses = {
       { status: 204 }
     ),
 
-  badRequest: (error: string) =>
+  badRequest: (error: string, details?: unknown) =>
     NextResponse.json(
-      { success: false, error, statusCode: 400 },
+      { success: false, error, ...(details ? { details } : {}), statusCode: 400 },
       { status: 400 }
     ),
 
