@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useDashboardData, useDashboardFilters, type DashboardFilters } from '@/src/hooks/useDashboardData'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { ChartContainer } from '@/components/dashboard/chart-container'
@@ -25,6 +25,12 @@ import { calculatePercentageProgress } from '@/src/utils/dashboard'
 // Temporary company ID - will come from session
 const COMPANY_ID = 'temp-company-id'
 
+const MOCK_DUE_ACCOUNTS = [
+  { id: '1', name: 'Fornecedor X', amount: 5000, dueDate: new Date('2024-01-08T12:00:00.000Z'), type: 'pay' as const },
+  { id: '2', name: 'Cliente Y', amount: 8000, dueDate: new Date('2024-01-10T12:00:00.000Z'), type: 'receive' as const },
+  { id: '3', name: 'Cliente Z', amount: 3000, dueDate: new Date('2024-01-15T12:00:00.000Z'), type: 'receive' as const },
+]
+
 export default function ExecutiveDashboardPage() {
   const { filters, updateFilters } = useDashboardFilters()
   const { kpis, cashFlow, metrics, sellers, loading, error, refetch } = useDashboardData(COMPANY_ID, filters)
@@ -37,29 +43,7 @@ export default function ExecutiveDashboardPage() {
     { id: '3', name: 'Cliente C', value: 25000, quantity: 2, growth: 20, percentage: 18 },
   ]
 
-  const mockDueAccounts = [
-    {
-      id: '1',
-      name: 'Fornecedor X',
-      amount: 5000,
-      dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      type: 'pay' as const
-    },
-    {
-      id: '2',
-      name: 'Cliente Y',
-      amount: 8000,
-      dueDate: new Date(),
-      type: 'receive' as const
-    },
-    {
-      id: '3',
-      name: 'Cliente Z',
-      amount: 3000,
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      type: 'receive' as const
-    },
-  ]
+  const mockDueAccounts = MOCK_DUE_ACCOUNTS
 
   const handleExport = (format: 'pdf' | 'excel' | 'png') => {
     console.log(`Exportando como ${format}`)

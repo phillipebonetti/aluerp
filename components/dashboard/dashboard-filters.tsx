@@ -5,6 +5,8 @@ import { Filter, Download, Share2, RotateCw } from 'lucide-react'
 import { useState } from 'react'
 import { DashboardFilters } from '@/src/hooks/useDashboardData'
 
+type DashboardPeriod = DashboardFilters['period']
+
 interface DashboardFilterBarProps {
   filters: DashboardFilters
   onFilterChange: (filters: Partial<DashboardFilters>) => void
@@ -49,7 +51,7 @@ export function DashboardFilterBar({
                 key={period.value}
                 variant={filters.period === period.value ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => onFilterChange({ period: period.value as any })}
+                onClick={() => onFilterChange({ period: period.value as DashboardPeriod })}
                 className="text-xs"
               >
                 {period.label}

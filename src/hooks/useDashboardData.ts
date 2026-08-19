@@ -67,18 +67,29 @@ export function useDashboardData(companyId: string, filters: DashboardFilters) {
 }
 
 export function useDashboardFilters() {
-  const [filters, setFilters] = useState<DashboardFilters>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardFilters')
-      return saved ? JSON.parse(saved) : { period: '90' }
+  // O primeiro render precisa ser idêntico no servidor e no cliente.
+  // Preferências persistidas são aplicadas somente depois da hidratação.
+  const [filters, setFilters] = useState<DashboardFilters>({ period: '90' })
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('dashboardFilters')
+    if (!saved) return
+
+    try {
+      const parsed = JSON.parse(saved) as Partial<DashboardFilters>
+      const period = parsed.period
+      if (period === '30' || period === '90' || period === '180' || period === '365') {
+        setFilters(prev => ({ ...prev, ...parsed, period }))
+      }
+    } catch {
+      window.localStorage.removeItem('dashboardFilters')
     }
-    return { period: '90' }
-  })
+  }, [])
 
   const updateFilters = useCallback((newFilters: Partial<DashboardFilters>) => {
     setFilters(prev => {
       const updated = { ...prev, ...newFilters }
-      localStorage.setItem('dashboardFilters', JSON.stringify(updated))
+      window.localStorage.setItem('dashboardFilters', JSON.stringify(updated))
       return updated
     })
   }, [])
