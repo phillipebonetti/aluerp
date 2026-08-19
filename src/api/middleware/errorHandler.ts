@@ -63,7 +63,16 @@ export function handleApiError(error: unknown): NextResponse {
       return ApiResponses.notFound('Recurso não encontrado')
     }
     if (error.code === 'P2003') {
-      return ApiResponses.unprocessableEntity('Referência inválida')
+      console.error('[v0] Prisma foreign key violation', {
+        code: error.code,
+        meta: error.meta ?? null,
+      })
+      const field = typeof error.meta?.field_name === 'string'
+        ? error.meta.field_name
+        : typeof error.meta?.constraint === 'string'
+          ? error.meta.constraint
+          : 'campo desconhecido'
+      return ApiResponses.unprocessableEntity(`Referência inválida: ${field}`)
     }
   }
 

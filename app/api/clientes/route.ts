@@ -101,8 +101,10 @@ export async function POST(request: NextRequest) {
       }
 
       const clientService = new ClientService()
+      const companyId = authReq.user.companyId
+      console.info('[v0] Criando cliente', { companyId, userId: authReq.user.id })
       const newClient = await clientService.create({
-        companyId: authReq.user.companyId,
+        companyId,
         data: parsed.data,
       })
 
@@ -110,8 +112,12 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof ApiError) throw error
       console.error('[v0] Falha ao criar cliente', {
+        companyId: authReq.user.companyId,
+        userId: authReq.user.id,
         name: error instanceof Error ? error.name : 'UnknownError',
         message: error instanceof Error ? error.message : 'Erro desconhecido',
+        code: error && typeof error === 'object' && 'code' in error ? error.code : undefined,
+        meta: error && typeof error === 'object' && 'meta' in error ? error.meta : undefined,
       })
       throw error
     }
