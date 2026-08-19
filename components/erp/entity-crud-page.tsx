@@ -11,6 +11,31 @@ import type { LucideIcon } from 'lucide-react'
 
 interface EntityRecord { id: string; name: string; status?: string; email?: string | null; phone?: string | null; client?: { name: string } | null }
 
+type ApiPayload = {
+  success?: boolean
+  data?: unknown
+  items?: unknown
+  error?: string
+  message?: string
+}
+
+function extractRecords(payload: ApiPayload | unknown): EntityRecord[] {
+  if (Array.isArray(payload)) return payload as EntityRecord[]
+  if (!payload || typeof payload !== 'object') throw new Error('Resposta inválida da API.')
+
+  const record = payload as ApiPayload
+  if (Array.isArray(record.items)) return record.items as EntityRecord[]
+  if (Array.isArray(record.data)) return record.data as EntityRecord[]
+
+  if (record.data && typeof record.data === 'object') {
+    const nested = record.data as ApiPayload
+    if (Array.isArray(nested.items)) return nested.items as EntityRecord[]
+    if (Array.isArray(nested.data)) return nested.data as EntityRecord[]
+  }
+
+  throw new Error('A API retornou um formato de lista inválido.')
+}
+
 interface EntityCrudPageProps {
   title: string
   description: string
@@ -34,9 +59,11 @@ export function EntityCrudPage({ title, description, singular, endpoint, icon: I
     setError(null)
     try {
       const response = await fetch(`${endpoint}?take=100`, { cache: 'no-store' })
-      if (!response.ok) throw new Error('Não foi possível carregar os registros.')
-      const payload = await response.json()
-      setItems(payload.data?.items ?? payload.data ?? [])
+      const payload = await response.json().catch(() => null) as ApiPayload | null
+      if (!response.ok) {
+        throw new Error(payload?.error || payload?.message || 'Não foi possível carregar os registros.')
+      }
+      setItems(extractRecords(payload))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar os registros.')
     } finally {
