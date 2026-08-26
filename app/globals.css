@@ -140,6 +140,18 @@
   }
 }
 
+.eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.22em] text-accent;
+}
+
+.section-title {
+  @apply mt-4 text-3xl font-bold leading-tight tracking-tight text-primary sm:text-4xl;
+}
+
+.lead {
+  @apply text-xl leading-8 text-primary;
+}
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
